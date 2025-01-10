@@ -199,6 +199,12 @@ key: [value,vtype,required]
 - [ ] 增加异常处理：网络异常。
 - [ ] Command-Line Switch
 
+### Not-Planned
+
+- MarkDown/LaTeX 渲染
+- 历史记录
+- 中途更改 Temperature 和 System Prompt
+
 ## 参考文档
 
 - [DeepSeek API Docs](https://api-docs.deepseek.com/zh-cn/)
