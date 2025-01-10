@@ -30,10 +30,9 @@ VSVersionInfo(
       StringTable(
         u'040904b0',
         [StringStruct(u'FileVersion', u'1, 0, 0, 0'),
-        StringStruct('InternalName', 'sk-api'),
         StringStruct(u'LegalCopyright', u'Copyright (c) 2025 PumpkinJui'),
-        StringStruct(u'OriginalFilename', u'sk_chat.exe'),
-        StringStruct(u'ProductName', u'sk_chat'),
+        StringStruct(u'OriginalFilename', u'sk-api.exe'),
+        StringStruct(u'ProductName', u'sk-api'),
         StringStruct(u'ProductVersion', u'1.0')])
       ]), 
     VarFileInfo([VarStruct(u'Translation', [1033, 1200])])

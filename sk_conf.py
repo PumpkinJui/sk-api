@@ -17,9 +17,9 @@ def confCheck(confG):
     confC = {}
     for m,n in confG.items():
         if checklt.get(m) == None:
-            print('WRN: Invalid key name {}.'.format(m))
+            print('WRN: "{}" is an invalid key.'.format(m))
         elif checklt.get(m)[1] != type(n):
-            print('WRN：Invalid key value {}.'.format(m))
+            print('WRN：Key "{}" has an invalid value.'.format(m))
         else:
             confC[m] = n
     return confC
@@ -28,7 +28,7 @@ def confMerge(confD,confC):
     confD.update(confC)
     for m,n in confD.items():
         if checklt.get(m)[2] and n == checklt.get(m)[0]:
-            print('ERR: Required key name {} undefined or invalid.'.format(m))
+            print('ERR: Key "{}" is required.'.format(m))
             confD = False
     return confD
 
@@ -39,10 +39,10 @@ def confGet(confFile):
         print('INF: Configurations read!')
     except FileNotFoundError:
         print('ERR: Configurations not exist.')
-        print('     Applying default configurations...')
-        return confDefault()
+        print('INF: Applying default configurations...')
+        return confMerge(confDefault(),{})
     except JSONDecodeError:
         print('ERR: Invalid JSON format.')
-        print('     Applying default configurations...')
-        return confDefault()
+        print('INF: Applying default configurations...')
+        return confMerge(confDefault(),{})
     return confMerge(confDefault(),confCheck(confG))

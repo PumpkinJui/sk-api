@@ -1,6 +1,6 @@
 import requests
 import json
-from sk_conf import confGet
+from sk_conf import *
 from traceback import print_exc
 
 def exitc(reason=str):
@@ -14,11 +14,21 @@ def confGen():
             SKjson = json.load(sk)
     except:
         SKjson = {}
-    KEY = input('Enter your DeepSeek API KEY: ')
+    while True:
+        try:
+            print('INF: Enter your DeepSeek API KEY.')
+            KEY = input('REQ: ')
+            if KEY == '':
+                raise
+            break
+        except:
+            print('ERR: Null KEY.')
     SKjson['KEY'] = KEY
     with open('sk.json','w') as sk:
         json.dump(SKjson,sk)
-    print('Configurations saved!')
+    print('INF: Configurations saved!')
+    print('INF: Applying new configurations...')
+    return confMerge(confDefault(),confCheck(SKjson))
 
 def balance_chk(KEY=str):
     url = "https://api.deepseek.com/user/balance"
@@ -126,14 +136,15 @@ def chat(KEY=str,stream=bool):
         else:
             ast_stream(url,headers,msg,temp)
 
-conf = confGet('sk.json')
-if not conf:
-    confGen()
-print()
-
 try:
+    conf = confGet('sk.json')
+    if not conf:
+        conf = confGen()
+    print()
+
     if conf['balance_chk']:
-        exitc('{} left in the DeepSeek balance.'.format(balance_chk(conf['KEY'])))
+        exitc('INF: {} left in the DeepSeek balance.'.format(balance_chk(conf['KEY'])))
+
     chat(conf['KEY'],conf['stream'])
 except SystemExit:
     pass
