@@ -3,7 +3,8 @@ from json.decoder import JSONDecodeError
 
 checklt = {
     "KEY": [None,str,True],
-    "stream": [False,bool,False]
+    "stream": [False,bool,False],
+    "balance_chk": [False,bool,False]
 }
 
 def confDefault():
@@ -16,9 +17,9 @@ def confCheck(confG):
     confC = {}
     for m,n in confG.items():
         if checklt.get(m) == None:
-            print('警告：{} 键是一个无效键。'.format(m))
+            print('WRN: Invalid key name {}.'.format(m))
         elif checklt.get(m)[1] != type(n):
-            print('警告：{} 键的对应值不合法。'.format(m))
+            print('WRN：Invalid key value {}.'.format(m))
         else:
             confC[m] = n
     return confC
@@ -27,7 +28,7 @@ def confMerge(confD,confC):
     confD.update(confC)
     for m,n in confD.items():
         if checklt.get(m)[2] and n == None:
-            print('错误：{} 键未指定或指定的值不合法。'.format(m))
+            print('ERR: Required key name {} undefined or invalid.'.format(m))
             confD = False
     return confD
 
@@ -35,11 +36,13 @@ def confGet(confFile):
     try:
         with open(confFile,'r') as confR:
             confG = load(confR)
-        print('配置文件读取成功！')
+        print('Configurations read!')
     except FileNotFoundError:
-        print('配置文件不存在，将使用默认配置...')
+        print('Configurations not exist.')
+        print('Applying default configurations...')
         return confDefault()
     except JSONDecodeError:
-        print('配置文件不合 JSON 语法，将使用默认配置...')
+        print('Invalid JSON format.')
+        print('Applying default configurations...')
         return confDefault()
     return confMerge(confDefault(),confCheck(confG))
