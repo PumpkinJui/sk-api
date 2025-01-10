@@ -137,6 +137,9 @@ try:
     chat(conf['KEY'],conf['stream'])
 except SystemExit:
     pass
+except KeyboardInterrupt:
+    print()
+    exitc('Aborted.')
 except:
     print()
     print_exc()

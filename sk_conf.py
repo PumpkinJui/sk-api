@@ -27,7 +27,7 @@ def confCheck(confG):
 def confMerge(confD,confC):
     confD.update(confC)
     for m,n in confD.items():
-        if checklt.get(m)[2] and n == None:
+        if checklt.get(m)[2] and n == checklt.get(m)[0]:
             print('ERR: Required key name {} undefined or invalid.'.format(m))
             confD = False
     return confD
@@ -36,13 +36,13 @@ def confGet(confFile):
     try:
         with open(confFile,'r') as confR:
             confG = load(confR)
-        print('Configurations read!')
+        print('INF: Configurations read!')
     except FileNotFoundError:
-        print('Configurations not exist.')
-        print('Applying default configurations...')
+        print('ERR: Configurations not exist.')
+        print('     Applying default configurations...')
         return confDefault()
     except JSONDecodeError:
-        print('Invalid JSON format.')
-        print('Applying default configurations...')
+        print('ERR: Invalid JSON format.')
+        print('     Applying default configurations...')
         return confDefault()
     return confMerge(confDefault(),confCheck(confG))
