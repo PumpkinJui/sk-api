@@ -8,14 +8,25 @@
 
 ## 使用方法
 
+### 下载
+
+- Windows 可执行文件：在 [Releases 页面](https://github.com/PumpkinJui/sk-api/releases/) 下载最新版的 EXE 可执行文件。下载后双击运行。
+- 源码运行：
+  - 安装 Python。在安装时，请勾选 “Add to PATH” 一项。
+  - 打开命令行窗口 (在 Windows 上，按 `Win+R`，输入 `cmd` 后回车)，输入 `pip install --upgrade requests`，等待执行完毕。
+  - 下载本仓库中的 `sk_chat.py` 和 `sk_conf.py`，放在同一目录下。
+  - 在命令行使用 `cd /path/to/dir/` 定位到该目录，使用 `python sk_chat.py` 运行。(在 Windows 上，有时需要用 `cd /d /path/to/dir/` 来定位。)
+
+### 开始使用程序
+
 1. 如果没有配置文件，输入 API KEY。请在 [DeepSeek Platform](https://platform.deepseek.com/) 申请。首次注册时，有有效期一个月的免费 10 元额度可用。
 2. 输入 Temperature。这是介于 0 和 2 之间的一位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.0。
 3. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。
 4. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
 
-### 打包
+### 自行打包
 
-在安装 Python 后：
+下载本仓库，并在命令行定位到本仓库对应的目录。在安装 Python 后：
 
 ```shell
 pip install --upgrade requests pyinstaller
@@ -51,7 +62,9 @@ key: [value,vtype,required]
 - `value`：该键对应值；any。
 - `vtype`：对应值所属类型；`type`。
 - `required`：是否必填；`bool`。  
-  在此处设置为 `True` 时，推荐将 `value` 设置为 `None`；即使不设置，也大概率不会影响执行结果。
+  在此处设置为 `True` 时，推荐将 `value` 设置为 `None`、`""` (如果类型为 `str`) 等空值。  
+  这可以避免用户设置值和默认值撞车后带来误解。与此同时，后者在用户设置为空值时，也能正确判定为未填写必填项 (除非空值是可以接受的)。  
+  即使不这么设置，也大概率不会影响执行结果。
 
 #### `confDefault()`
 
@@ -105,8 +118,6 @@ key: [value,vtype,required]
 如果查询成功 (HTTP-200)，以 `total_balance currency` (类似于 `1.23 CNY`) 的形式返回余额。
 
 如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
-
-*这里的逻辑其实可以再改一改，查询成功时也直接调用 `exitc(reason)`，而不是返回到 `main` 以后再退出……？*
 
 #### `usr_get(rnd=int)`
 
@@ -169,11 +180,24 @@ key: [value,vtype,required]
 
 如果触发了 `KeyboardInterrupt`，因 `Aborted.` 调用 `exitc(reason)`。
 
-*此处逻辑也可更改；即使只是 `print()` 也可以转至 `finally` 块，完全不需要 `exitc(reason)`。*
-
 如果触发了其他异常，输出 `Traceback` 错误信息。
 
 在任何情况下，最后都会提示用户按回车退出，以等待用户查看信息并确认退出。
+
+## TODO
+
+- [ ] `balance_chk(KEY)`：查询成功时直接调用 `exitc(reason)`，而不是返回到 `main` 以后再退出。
+- [ ] `main`：将 `exitc(reason)` 改为 `print()`。
+- [ ] `sk_conf`：
+      - [ ] KEY 为空或非 `sk-` 开头时一定不合法，应当直接报错而不必请求尝试
+      - [ ] 移动 `confGen()`
+      - [ ] 拆分 `confMerge(confD,confC)`
+      - [ ] 查询配置功能
+      - [ ] 更改配置功能
+- [ ] 减少输出内容：可能需要增加配置项。
+- [ ] 添加配置：部分选项直接设为默认或配置值。
+- [ ] 增加异常处理：网络异常。
+- [ ] Command-Line Switch
 
 ## 参考文档
 
