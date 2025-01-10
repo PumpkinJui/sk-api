@@ -2,14 +2,18 @@ from conf import confGet
 import requests
 import json
 
-def balance_check(KEY):
+def balance_check(KEY=str):
     url = "https://api.deepseek.com/user/balance"
     payload={}
     headers = {
       'Accept': 'application/json',
       'Authorization': 'Bearer {}'.format(KEY)
     }
-    response = requests.request("GET", url, headers=headers, data=payload)
+    rsp = requests.request("GET", url, headers=headers, data=payload)
+    if rsp.status_code == requests.codes.ok:
+        return '{} {}'.format(json.loads(rsp.text)['balance_infos'][0]['total_balance'],json.loads(rsp.text)['balance_infos'][0]['currency'])
+    else:
+        return '{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message'])
 
 def data_gen(msg=list,temp=float,stream=bool):
     payload = json.dumps({
@@ -30,6 +34,8 @@ def usr_get(rnd=int):
     return True
 
 conf = confGet('sk.json')
+# conf['KEY']
+# conf['stream']
 
 url = "https://api.deepseek.com/chat/completions"
 rnd = 0
@@ -37,7 +43,7 @@ rnd = 0
 headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json',
-  'Authorization': 'Bearer {}'.format(KEY)
+  'Authorization': 'Bearer {}'.format(conf['KEY'])
 }
 msg = []
 
@@ -65,8 +71,9 @@ while True:
     rnd += 1
     if not usr_get(rnd):
         break
+    print()
     print('Assistant #{}'.format(rnd))
-    rsp = requests.request("POST", url, headers=headers, data=data_gen(msg,temp,stream))
+    rsp = requests.request("POST", url, headers=headers, data=data_gen(msg,temp,conf['stream']))
     ast = json.loads(rsp.text)['choices'][0]['message']['content']
     msg.append({'role': 'assistant', 'content': ast})
     print(ast)
