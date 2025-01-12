@@ -1,5 +1,12 @@
 # sk-api
 
+![Create At: 2025-01-09.](https://img.shields.io/github/created-at/PumpkinJui/sk-api?style=for-the-badge&logo=github&logoColor=white&color=477DB2)
+[![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&logo=creativecommons&logoColor=white&color=477DB2)](LICENSE)
+![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=gitbook&logoColor=white&color=477DB2)
+
+[![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
+![Last Commit: When was the last commit made.](https://img.shields.io/github/last-commit/PumpkinJui/sk-api?display_timestamp=author&style=for-the-badge&color=yellow)
+
 通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。
 
 ## 功能特性
@@ -49,7 +56,7 @@ pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 
 <details>
 
-各有优劣。
+**各有优劣。**
 
 网页版不能设温度，也不能设系统提示词；但是网页版有 DeepThink 和 WebSearch 功能，还能直接输入连续的空行，而且还是免费的。API 虽然几乎相当于没收钱，毕竟还是收了的。
 
@@ -138,7 +145,7 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 <details>
 
-一款 AI 智能助手，类似于 ChatGPT、Kimi、豆包等，但是由不同的公司开发。
+**一款 AI 智能助手**，类似于 ChatGPT、Kimi、豆包等，但是由不同的公司开发。也是这家公司的名称 (中文名「深度求索」)
 
 - [DeepSeek 主页](https://www.deepseek.com/)
 - [DeepSeek 网页对话](https://chat.deepseek.com/)
@@ -150,11 +157,11 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 <details>
 
-本程序采用 [MIT](LICENSE) 授权，完全免费。
+**本程序采用 [MIT](LICENSE) 授权，完全免费。**
 
-对于网页对话来说，DeepSeek 是免费的；对于 API 请求则不是，但是便宜得令人难以置信。
+**对于网页对话来说，DeepSeek *是免费的*；对于 API 请求*则不是*，但是便宜得令人难以置信。**
 
-从我在开发中的测试来看，我玩了整整一周，甚至在沉浸式翻译拿它翻译了一本比较短的电子书，一共花了六毛钱。
+从我在开发中的测试来看，我玩了整整一周，甚至在沉浸式翻译拿它翻译了一本比较短的电子书，一共花了六毛钱。其中，对话远远没有网页翻译花钱多。
 
 具体定价见[官方文档](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)。
 
@@ -164,7 +171,7 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 <details>
 
-如果你真的不喜欢付费，你也可以直接使用免费的网页对话。我喜欢用 API 的理由是它灵活开放，而且不用验证码。
+如果真的不喜欢付费，**你也可以直接使用免费的网页对话**。我喜欢用 API 的理由是它灵活开放，而且不用验证码。
 
 API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉浸式翻译](https://immersivetranslate.com/)上面，获得更高质量的网页翻译。
 
@@ -180,7 +187,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 <details>
 
-**不能。**因为本程序是用 API 进行远程服务器请求，而不是本地大模型进行生成，所以必须联网。
+**不能**。因为本程序是用 API 进行远程服务器请求，而不是本地大模型进行生成，所以必须联网。
 
 如果有离线需求，请考虑本地大模型。教程请在[少数派 sspai](https://sspai.com/)等网站进行搜索。
 
@@ -190,7 +197,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 <details>
 
-**暂时没有计划。**Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。
+**暂时没有计划**。Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。
 
 </details>
 
@@ -362,6 +369,7 @@ key: [value,vtype,required]
 
 ## TODO
 
+- [ ] 考虑要不要把流式设为默认。
 - [ ] `balance_chk(KEY)`：查询成功时直接调用 `exitc(reason)`，而不是返回到 `main` 以后再退出。
 - [ ] `main`：将 `exitc(reason)` 改为 `print()`。
 - [ ] `sk_conf`：
