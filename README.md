@@ -2,6 +2,14 @@
 
 通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。
 
+## 功能特性
+
+- 多轮对话
+- 流式传输 (默认禁用)
+- 多行输入输出
+- 温度 (temperature)、系统提示词 (system prompt) 设定
+- 极致轻简 (打包后仅占 6 MB 空间)
+
 ## 兼容性
 
 兼容 Windows 7 32-bit 及以上。
@@ -12,14 +20,14 @@
 
 - Windows 可执行文件：在 [Releases 页面](https://github.com/PumpkinJui/sk-api/releases/) 下载最新版的 EXE 可执行文件。下载后双击运行。
 - 源码运行：
-  - 安装 Python。在安装时，请勾选 “Add to PATH” 一项。
+  - 安装 Python。在安装时，请勾选 「Add to PATH」 一项。
   - 打开命令行窗口 (在 Windows 上，按 `Win+R`，输入 `cmd` 后回车)，输入 `pip install --upgrade requests`，等待执行完毕。
   - 下载本仓库中的 `sk_chat.py` 和 `sk_conf.py`，放在同一目录下。
   - 在命令行使用 `cd /path/to/dir/` 定位到该目录，使用 `python sk_chat.py` 运行。(在 Windows 上，有时需要用 `cd /d /path/to/dir/` 来定位。)
 
-### 开始使用程序
+### 开始使用
 
-1. 如果没有配置文件，输入 API KEY。请在 [DeepSeek Platform](https://platform.deepseek.com/) 申请。首次注册时，有有效期一个月的免费 10 元额度可用。
+1. 如果没有配置文件，输入 API KEY。请在 [DeepSeek Platform](https://platform.deepseek.com/api_keys) 申请，沉浸式翻译的文档里有一份[申请教程](https://immersivetranslate.com/zh-Hans/docs/services/deepseek/)。使用中国大陆手机号注册开放平台账户，即可获得 10 元的 API 体验金，有效期一个月。
 2. 输入 Temperature。这是介于 0 和 2 之间的一位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.0。
 3. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。
 4. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
@@ -33,9 +41,181 @@ pip install --upgrade requests pyinstaller
 pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 ```
 
-## 结构组成
+## FAQ
 
+<details>
+<summary>
+價值評估 (节选)
+</summary>
+
+> 價值評估
+>
+> 價值的起點是一個真實的問題。當我們看到一個值得解決的問題，並清晰地認識到其背後的價值時，就會產生繼續推進的動力。而脫離了「實際問題」這個根基，整個計劃的目標就變成了一個「空想」，因此其未來自然是不明朗的。
+>
+> 明確價值，實際上就是在回答這樣的一個問題：「完成這個計劃的過程和結果能給我們帶來什麼樣的好處？」這裡得到的理由越充分，把計劃執行完的可能性就越高。
+>
+> ……
+>
+> 除了對自身價值的評估之外，計劃本身的價值也需要被納入考量。對價值的評估始於明確的「問題」。尤其是針對「開發軟體」、「製作遊戲」或者「寫本小說」這種企劃，在給它們的價值做定性的時候，最先需要回答的問題便是「這個計劃究竟解決了什麼問題？」
+>
+> 一個軟體在解決的問題可能是「工作效率」，而一款遊戲在解決的問題可能是「表達一個觀念、保存一段文化、記錄一個故事」。明確了這個問題之後我們便可以藉由問題的價值來推估整個計劃價值的天花板。具體的做法有很多：比如，從「有多少人關注這個問題？」這樣的角度來進行推算。再比如，假設你希望藉由這個計劃獲取資金上的利益的話，不妨再來進一步評估一下：「人們願意為了這個問題付出多少錢？」藉著這些資訊我們可以通過一個粗糙的乘法得到大致的盈利空間。
+>
+> 與如夢似幻的想像不同，以上討論到的「具象化概念」可以幫助我們找到計劃的「不可替代性」，進而為計劃長期執行提供持續性動力，而非單純地依靠「開坑嗎啡」做「短程衝刺」。
+>
+> ……
+>
+> 无论这个计划最终呈现出来的效果是怎样的，它对于我们的价值都独一无二，值得我们去呵护和坚守。
+>
+> ⸺《當代學生生存手冊》
+
+</details>
+
+大多数人的表现就是这样子的：「听上去好厉害哦，但具体来说……」
+
+「它和网页版有何区别？具有怎样的意义？」
+
+这是做它时和做出来它以后，我被问到最多的问题。
+
+<details>
+<summary>
+### 和网页版的区别
+</summary>
+
+各有优劣。
+
+网页版不能设温度，也不能设系统提示词；但是网页版有 DeepThink 和 WebSearch 功能，还能直接输入连续的空行，而且还是免费的。API 虽然几乎相当于没收钱，毕竟还是收了的。
+
+API 更为灵活，因此可以在网页对话之外的众多场景中使用。
+
+</details>
+
+<details>
+<summary>
+### 意义
+</summary>
+
+……其实有的时候我挺讨厌这个问题的，干就完了管什么意义不意义的。问那么多意义不虚无主义吗。
+
+好吧我还是回答一下。
+
+最早做这个是意外注册了 DeepSeek 的开放平台账号，发现居然有 10 块钱，还一个月就到期。于是弄了一个 API KEY，把它挂上了[沉浸式翻译](https://immersivetranslate.com/)。
+
+然后在翻译的时候发现这玩意质量特别高：我原来用的是免费的智谱翻译，在它没出时还用过微软翻译，有时还用腾讯交互翻译。  
+后面这些服务在翻译 [Harry Potter Wiki](https://harrypotter.fandom.com/wiki/) 时全部处于蒙圈状态：人名翻译准不准确要看心情和运气，比如智谱，即使我专门配置了对 HPW 的提示词，还是对各位姓或名由 S 开头的分不清楚，斯拉格霍恩 (Slughorn) 和斯内普 (Snape) 全都变成了斯莱特林 (Slytherin)；咒语更是基本没有翻译对的，只有阿瓦达索命、呼神护卫等知名咒语翻译是准的。  
+而 DeepSeek 没有译错的人名，咒语也能译对很多……
+
+于是后来就想把手机里面的通义扔了换成 DeepSeek (吐槽通义不好好做对话弄一堆舞王和活动什么的)，但是发现它没做 APP；而我浏览器从来不记录历史记录和登录状态，它还每次要我验证码，就很难办了。  
+最后我把通义换了 Kimi，但是还是想用 DeepSeek，那就跟着 API 文档鼓捣呗。
+
+我手机上用的是 Termux。一开始看见文档有 CURL，就想用 Linux Bash 实现。后来靠着 AI (主要指 Kimi) 做出来非流式传输的多轮对话；还有 bug，不知道为什么一滚屏就不能多轮对话了，说我有控制字符；而且也不能多行输入，可能也是我当时没考虑到做这个。  
+后来做流式传输时被多行输出卡住了，不管怎么改，都要么吞换行，要么显示成 n。于是索性掀桌不做了。
+
+然后转战 Python。Python 是我的编程第一语言了，但是一上来就因为我 Termux 用的 Python 版本太新，装不上 OpenAI 的第三方库；于是改用 requests，靠改示例代码，写出来了这个程序。除了在手机上的编辑 (拿不上电脑导致的) 以外，有相当一部分工作 (包括 0.9 的打包) 都是在南 219 机房做的，因为那的电脑是 Windows 7 32-bit，我理想中的最低兼容目标。  
+1.0 是人脑执行程序发现 bug 以后急急忙忙改的，最后借科夫的 Windows 7 64-bit 电脑，现场装了个 32 位的 Python 3.8.10 打包。至此 1.0 版本完工，当然也有需要优化的代码和新增的功能，但可用性已经很强了。再后来，就把这玩意上了 GitHub。
+
+所以说了这么多，到底有什么意义呢？
+
+折腾的意义，让我不用验证码同时用上 DeepSeek 的意义，学习 Bash 和 requests 的意义，甚至耍帅的意义。
+
+或者在拿不上手机的场景、一人付费大家共享的场景，放在班里面大家公用一类的……
+
+真要往大点说，毕竟这一套东西是和 OpenAI 接口兼容的，我改个网址就可以换成 kimi-api、glm-api、qwen-api……变相实现了 OpenAI 库的一些功能？
+
+这么看来，意义么，我想做就好了。「想」比任何意义都管用。
+
+延伸阅读：上文「價值評估 (节选)」
+
+</details>
+
+<details>
+<summary>
+### 它能干什么
+</summary>
+
+用专业一点的说法，就是上面那句：「通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。」
+
+用更容易理解的说法，就是这样的：(以下内容由本程序辅助生成)
+
+> 简单来说，这个程序就像是一个桥梁，让你可以轻松地与一个聪明的 AI 助手对话，而不需要了解复杂的技术细节。
+>
+> API (应用程序编程接口) 就像是一个「服务员」或「中间人」，它帮助不同的软件或应用程序之间进行沟通和协作。想象一下，你去一家会员制餐厅吃饭。你不需要知道厨房里是如何做菜的，你只需要出示会员卡，告诉服务员你想要什么，服务员会把你的需求传达给厨房，然后把做好的菜端给你。API 就像这个服务员，它让不同的软件系统之间能够互相「点菜」和「上菜」，而不需要知道对方内部的具体实现细节。而 API 密钥则像是那张会员卡，可以用来证明你的身份，如果没有它你就点不了菜，用不了更优惠的价格。
+>
+> 为了与 DeepSeek 进行对话，你可以在命令行界面 (CLI) 运行已经打包好的程序，或者通过 Python 直接运行本程序的源码。
+
+</details>
+
+<details>
+<summary>
+### DeepSeek 是什么
+</summary>
+
+一款 AI 智能助手，类似于 ChatGPT、Kimi、豆包等，但是由不同的公司开发。
+
+- [DeepSeek 主页](https://www.deepseek.com/)
+- [DeepSeek 网页对话](https://chat.deepseek.com/)
+- [DeepSeek 开放平台](https://platform.deepseek.com/)
+
+</details>
+
+<details>
+<summary>
+### 它是否收费
+</summary>
+
+本程序采用 [MIT](LICENSE) 授权，完全免费。
+
+对于网页对话来说，DeepSeek 是免费的，对于 API 请求则不是 (但是便宜得难以置信)。
+
+具体定价见[官方文档](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)。
+
+</details>
+
+<details>
+<summary>
+### 那么既然可以免费用，为什么我要付费？
+</summary>
+
+如果你真的不喜欢付费，你也可以直接使用免费的网页对话。我喜欢用 API 的理由是它灵活开放，而且不用验证码。
+
+API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉浸式翻译](https://immersivetranslate.com/)上面，获得更高质量的网页翻译。
+
+还有许多像这样能接入 AI 的软件，[Awesome DeepSeek Integration](https://github.com/deepseek-ai/awesome-deepseek-integration) 中提供了一部分示例。这就是说，通过使用 API，你还可以使用不仅限于本程序的其他许多程序。
+
+通过 API，也不必限于在浏览器里用 DeepSeek 了，本程序实现的就是这个。
+
+另外，也不是必须只用 API 不用网页版，这两者并不排斥。
+
+</details>
+
+<details>
+<summary>
+### 它能否离线运行
+</summary>
+
+**不能。**因为本程序是用 API 进行远程服务器请求，而不是本地大模型进行生成，所以必须联网。
+
+如果有离线需求，请考虑本地大模型。教程请在[少数派 sspai](https://sspai.com/)等网站进行搜索。
+
+</details>
+
+<details>
+<summary>
+### 其他系统打包可执行文件计划
+</summary>
+
+**没有计划。**Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。
+
+</details>
+
+<details>
+<summary>
+## 结构组成
+</summary>
+
+<details>
+<summary>
 ### sk.json
+</summary>
 
 配置文件，使用 JSON 语言。支持的配置项如下：
 
@@ -46,7 +226,12 @@ pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
 
+</details>
+
+<details>
+<summary>
 ### sk_conf.py
+</summary>
 
 通用配置读取模块。
 
@@ -97,7 +282,12 @@ key: [value,vtype,required]
 
 如果该文件存在并合 JSON 语法，检查所有配置项，将合法配置合并进默认配置，并返回合并后的配置。
 
+</details>
+
+<details>
+<summary>
 ### sk_chat.py
+</summary>
 
 对话主脚本。
 
@@ -184,6 +374,9 @@ key: [value,vtype,required]
 
 在任何情况下，最后都会提示用户按回车退出，以等待用户查看信息并确认退出。
 
+</details>
+</details>
+
 ## TODO
 
 - [ ] `balance_chk(KEY)`：查询成功时直接调用 `exitc(reason)`，而不是返回到 `main` 以后再退出。
@@ -194,9 +387,14 @@ key: [value,vtype,required]
       - [ ] 拆分 `confMerge(confD,confC)`
       - [ ] 查询配置功能
       - [ ] 更改配置功能
-- [ ] 减少输出内容：可能需要增加配置项。
+- [ ] KEY：
+      - [ ] 加密存储
+      - [ ] 多个 KEY，分压
+- [ ] 减少输出内容。(可能需要增加配置项)
 - [ ] 添加配置：部分选项直接设为默认或配置值。
 - [ ] 增加异常处理：网络异常。
+- [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中。(可能需要增加配置项)
+      - [ ] 将 temperature 说明从 `INF` 改为 `TIP`。
 - [ ] Command-Line Switch
 
 ### Not-Planned
