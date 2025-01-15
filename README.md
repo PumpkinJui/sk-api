@@ -214,7 +214,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - `KEY`：`str`。DeepSeek API KEY。  
   必填项。
 - `stream`：`bool`。设定为 `true` 时，进行流式输出，`false` 反之。  
-  选填项，默认为 `false`。
+  选填项，默认为 `true`。
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
 
@@ -295,7 +295,7 @@ key: [value,vtype,required]
 
 使用 `requests` 库，向远程服务器发送请求，查询指定 KEY 对应账户的余额。
 
-如果查询成功 (HTTP-200)，以 `total_balance currency` (类似于 `1.23 CNY`) 的形式返回余额。
+如果查询成功 (HTTP-200)，因 `INF: total_balance currency left in the DeepSeek balance.` (类似于 `1.23 CNY`) 调用 `exitc(reason)`。
 
 如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
 
@@ -358,7 +358,7 @@ key: [value,vtype,required]
 
 如果触发了 `SystemExit`，直接转至 `finally` 块，等待用户确认退出。
 
-如果触发了 `KeyboardInterrupt`，因 `Aborted.` 调用 `exitc(reason)`。
+如果触发了 `KeyboardInterrupt`，输出 `Aborted.`。
 
 如果触发了其他异常，输出 `Traceback` 错误信息。
 
@@ -369,11 +369,7 @@ key: [value,vtype,required]
 
 ## TODO
 
-- [ ] 考虑要不要把流式设为默认。
-- [ ] `balance_chk(KEY)`：查询成功时直接调用 `exitc(reason)`，而不是返回到 `main` 以后再退出。
-- [ ] `main`：将 `exitc(reason)` 改为 `print()`。
 - [ ] `sk_conf`：
-      - [ ] KEY 为空或非 `sk-` 开头时一定不合法，应当直接报错而不必请求尝试
       - [ ] 移动 `confGen()`
       - [ ] 拆分 `confMerge(confD,confC)`
       - [ ] 查询配置功能
@@ -385,7 +381,6 @@ key: [value,vtype,required]
 - [ ] 添加配置：部分选项直接设为默认或配置值。
 - [ ] 增加异常处理：网络异常。
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中。(可能需要增加配置项)
-      - [ ] 将 temperature 说明从 `INF` 改为 `TIP`。
 - [ ] Command-Line Switch
 
 ### Not-Planned

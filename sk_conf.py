@@ -2,8 +2,8 @@ from json import load
 from json.decoder import JSONDecodeError
 
 checklt = {
-    "KEY": [None,str,True],
-    "stream": [False,bool,False],
+    "KEY": ["",str,True],
+    "stream": [True,bool,False],
     "balance_chk": [False,bool,False]
 }
 

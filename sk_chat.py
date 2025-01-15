@@ -3,7 +3,7 @@ import json
 from sk_conf import *
 from traceback import print_exc
 
-def exitc(reason=str):
+def exitc(reason:str):
     if reason:
         print(reason)
     raise SystemExit
@@ -30,7 +30,7 @@ def confGen():
     print('INF: Applying new configurations...')
     return confMerge(confDefault(),confCheck(SKjson))
 
-def balance_chk(KEY=str):
+def balance_chk(KEY:str):
     url = "https://api.deepseek.com/user/balance"
     payload={}
     headers = {
@@ -39,11 +39,11 @@ def balance_chk(KEY=str):
     }
     rsp = requests.request("GET", url, headers=headers, data=payload)
     if rsp.status_code == requests.codes.ok:
-        return '{} {}'.format(json.loads(rsp.text)['balance_infos'][0]['total_balance'],json.loads(rsp.text)['balance_infos'][0]['currency'])
+        exitc('INF: {} {} left in the DeepSeek balance.'.format(json.loads(rsp.text)['balance_infos'][0]['total_balance'],json.loads(rsp.text)['balance_infos'][0]['currency']))
     else:
-        exitc('{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
+        exitc('ERR: {} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
 
-def usr_get(rnd=int):
+def usr_get(rnd:int):
     print('User #{}'.format(rnd))
     lines = []
     while True:
@@ -56,7 +56,7 @@ def usr_get(rnd=int):
     usr = '\n'.join(lines)
     return {'role': 'user', 'content': usr}
 
-def data_gen(msg=list,temp=float,stream=bool):
+def data_gen(msg:list,temp:float,stream:bool):
     payload = json.dumps({
       "messages": msg,
       "model": "deepseek-chat",
@@ -66,7 +66,7 @@ def data_gen(msg=list,temp=float,stream=bool):
     })
     return payload
 
-def ast_nostream(url=str,headers=dict,msg=list,temp=float):
+def ast_nostream(url:str,headers:dict,msg:list,temp:float):
     # print(data_gen(msg,temp,False))
     rsp = requests.request("POST", url, headers=headers, data=data_gen(msg,temp,False))
     if rsp.status_code == requests.codes.ok:
@@ -77,7 +77,7 @@ def ast_nostream(url=str,headers=dict,msg=list,temp=float):
     else:
         exitc('{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
 
-def ast_stream(url=str,headers=dict,msg=list,temp=float):
+def ast_stream(url:str,headers:dict,msg:list,temp:float):
     # print(data_gen(msg,temp,True))
     ast = ''
     rsp = requests.request("POST",url, headers=headers, data=data_gen(msg,temp,True),stream=True)
@@ -97,7 +97,7 @@ def ast_stream(url=str,headers=dict,msg=list,temp=float):
     else:
         exitc('{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
 
-def chat(KEY=str,stream=bool):
+def chat(KEY:str,stream:bool):
     url = "https://api.deepseek.com/chat/completions"
     headers = {
       'Content-Type': 'application/json',
@@ -143,14 +143,14 @@ try:
     print()
 
     if conf['balance_chk']:
-        exitc('INF: {} left in the DeepSeek balance.'.format(balance_chk(conf['KEY'])))
+        balance_chk(conf['KEY'])
 
     chat(conf['KEY'],conf['stream'])
 except SystemExit:
     pass
 except KeyboardInterrupt:
     print()
-    exitc('Aborted.')
+    print('Aborted.')
 except:
     print()
     print_exc()
