@@ -211,12 +211,30 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 配置文件，使用 JSON 语言。支持的配置项如下：
 
-- `KEY`：`str`。DeepSeek API KEY。  
-  必填项。
 - `stream`：`bool`。设定为 `true` 时，进行流式输出，`false` 反之。  
   选填项，默认为 `true`。
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
+- `series`：`dict`。具体配置各大模型的信息。必填项。
+  - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+  - `GLM`：`dict`。配置 GLM 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `glm-4-flash`。可选项*暂定*包括：
+      - glm-zero-preview
+      - glm-4-plus-0111
+      - glm-4-air-0111
+      - glm-4-long
+      - glm-4-airx
+      - glm-4-flashx
+      - glm-4-flash
+      - glm-4-alltools <!-- 还要额外适配 tools？真是越来越精彩了。-->
+      - charglm-4
+      - emohaa
+      - codegeex-4
+    - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密。  
+      选填项，默认为 `True`。
 
 </details>
 
@@ -246,9 +264,9 @@ key: [value,vtype,required]
 
 根据 `checklt` 生成并返回默认配置。
 
-#### `confCheck(confG)`
+#### `confCheck(confG:dict,ref:dict)`
 
-根据默认配置，检查 `confG` 中的自定义配置。检查项包括：
+根据 `ref` 中的配置，检查 `confG` 中的自定义配置。检查项包括：
 
 - 键名称是否包含在可用配置列表内。
 - 键对应值是否符合指定类型。
@@ -257,15 +275,17 @@ key: [value,vtype,required]
 
 检查后，返回合法的自定义配置。
 
-#### `confMerge(confD,confC)`
+#### `confMerge(confD:dict,confC:dict)`
 
 将 `confC` 中的配置项合并到 `confD` 中。`confD` 中原有的配置项将被覆盖。
 
-随后，检查必填项是否已经填写；如果有任一必填项未填写，输出一条错误信息，并返回 `False`。
+随后，检查必填项是否已经填写。如果必填项全部填写，返回合并后的配置；否则返回 `False`。
 
-如果必填项全部填写，返回合并后的配置。
+#### `confRcheck(confR:dict,ref:dict)`
 
-#### `confGet(confFile)`
+根据 `ref` 中的配置，检查必填项是否已经填写；如果有任一必填项未填写，输出一条错误信息，并返回 `False`；否则返回原配置。
+
+#### `confGet(confFile:str)`
 
 读取自定义配置文件 `confFile`。该文件应为 JSON 格式。
 
@@ -281,7 +301,7 @@ key: [value,vtype,required]
 
 对话主脚本。
 
-#### `exitc(reason=str)`
+#### `exitc(reason:str)`
 
 输出 `reason` 并抛出 `SystemExit`。这将导致剩余所有部分不再执行，等待用户确认退出。没有返回值。
 
@@ -291,7 +311,7 @@ key: [value,vtype,required]
 
 返回新自定义配置中的合法部分，与默认配置合并后的配置。相当于 `confGet('sk.json')` 除打开配置文件以外的其他操作。
 
-#### `balance_chk(KEY=str)`
+#### `balance_chk(KEY:str)`
 
 使用 `requests` 库，向远程服务器发送请求，查询指定 KEY 对应账户的余额。
 
@@ -299,7 +319,7 @@ key: [value,vtype,required]
 
 如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
 
-#### `usr_get(rnd=int)`
+#### `usr_get(rnd:int)`
 
 输出 `User #rnd`，并获取用户的多行输入。
 
@@ -308,11 +328,11 @@ key: [value,vtype,required]
 - 如果已经有了输入内容，将所有内容使用 `\n` 拼接在一起，以 `messages` 格式返回。
 - 如果没有输入内容，因 `Null input; chat ended.` 调用 `exitc(reason)`。
 
-#### `data_gen(msg=list,temp=float,stream=bool)`
+#### `data_gen(msg:list,temp:float,stream:bool)`
 
 根据各参数值，生成 JSON 格式的请求信息并返回。
 
-#### `ast_nostream(url=str,headers=dict,msg=list,temp=float)`
+#### `ast_nostream(url:str,headers:dict,msg:list,temp:float)`
 
 在 `stream` 为 `False` 时执行的部分。
 
@@ -324,7 +344,7 @@ key: [value,vtype,required]
 
 没有返回值。
 
-#### `ast_stream(url=str,headers=dict,msg=list,temp=float)`
+#### `ast_stream(url:str,headers:dict,msg:list,temp:float)`
 
 在 `stream` 为 `True` 时执行的内容。
 
@@ -336,7 +356,7 @@ key: [value,vtype,required]
 
 没有返回值。
 
-#### `chat(KEY=str,stream=bool)`
+#### `chat(KEY:str,stream:bool)`
 
 首先，获取 `Temperature`，并在其不合法时，反复提示正确格式并重新获取输入；此处为空将使用默认的 `1.0`。
 
@@ -370,8 +390,6 @@ key: [value,vtype,required]
 ## TODO
 
 - [ ] `sk_conf`：
-      - [ ] 移动 `confGen()`
-      - [ ] 拆分 `confMerge(confD,confC)`
       - [ ] 查询配置功能
       - [ ] 更改配置功能
 - [ ] KEY：
