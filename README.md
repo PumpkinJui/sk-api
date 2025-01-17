@@ -9,6 +9,9 @@
 
 通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。
 
+嫌 CLI 界面太丑，MarkDown 不渲染？试试 [NextChat](https://app.nextchat.dev/)！  
+个人推荐，非广告；NextChat 与本人无利益关联。
+
 ## 功能特性
 
 - 多轮对话
@@ -44,7 +47,7 @@
 下载本仓库，并在命令行定位到本仓库对应的目录。在安装 Python 后：
 
 ```shell
-pip install --upgrade requests pyinstaller
+pip install -r requirements.txt
 pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 ```
 
@@ -93,7 +96,7 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 或者在拿不上手机的场景、一人付费大家共享的场景，放在班里面大家公用一类的……
 
-真要往大点说，毕竟这一套东西是和 OpenAI 接口兼容的，我改个网址就可以换成 kimi-api、glm-api、qwen-api……变相实现了 OpenAI 库的一些功能？
+真要往大点说，毕竟这一套东西是和 OpenAI 接口兼容的，我改个网址就可以换成其他 AI……变相实现了 OpenAI 库的一些功能？
 
 这么看来，意义么，我想做就好了。「想」比任何意义都管用。
 
@@ -197,7 +200,9 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 <details>
 
-**暂时没有计划**。Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。
+~~**暂时没有计划**。Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。~~
+
+后续考虑 GitHub Actions。
 
 </details>
 
@@ -233,8 +238,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - charglm-4
       - emohaa
       - codegeex-4
-    - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密。  
-      选填项，默认为 `True`。
+    - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密 (即使用鉴权 token 进行鉴权)。  
+      选填项，默认为 `True`。这不影响直接传入鉴权 token。
 
 </details>
 
@@ -257,33 +262,48 @@ key: [value,vtype,required]
 - `vtype`：对应值所属类型；`type`。
 - `required`：是否必填；`bool`。  
   在此处设置为 `True` 时，推荐将 `value` 设置为 `None`、`""` (如果类型为 `str`) 等空值。  
-  这可以避免用户设置值和默认值撞车后带来误解。与此同时，后者在用户设置为空值时，也能正确判定为未填写必填项 (除非空值是可以接受的)。  
-  即使不这么设置，也大概率不会影响执行结果。
+  这可以使它看上去更整洁。即使不这么设置，也不会影响执行结果。
 
-#### `confDefault()`
+#### `confDefault(ref:dict=checklt)`
 
-根据 `checklt` 生成并返回默认配置。
+根据 `ref` 递归式生成并返回默认配置。
 
-#### `confCheck(confG:dict,ref:dict)`
+#### `confCheck(confG:dict,ref:dict=checklt)`
 
 根据 `ref` 中的配置，检查 `confG` 中的自定义配置。检查项包括：
 
 - 键名称是否包含在可用配置列表内。
 - 键对应值是否符合指定类型。
+- 如果键对应值是字典，检查其是否为空，并在非空时进行递归。
 
 对于非法的自定义配置项，输出一条警告，并跳过该配置项。
 
 检查后，返回合法的自定义配置。
 
-#### `confMerge(confD:dict,confC:dict)`
+#### `confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt)`
 
-将 `confC` 中的配置项合并到 `confD` 中。`confD` 中原有的配置项将被覆盖。
+首先，检查必填项是否已经填写。未填写必填项将返回 `False`。
 
-随后，检查必填项是否已经填写。如果必填项全部填写，返回合并后的配置；否则返回 `False`。
+然后，将 `confE` 中的配置项合并到 `confI` 中。`confI` 中原有的配置项将被覆盖。
 
-#### `confRcheck(confR:dict,ref:dict)`
+最后，检查 KEY 的填写格式。如果格式正确，返回合并后的配置；否则返回 `False`。
 
-根据 `ref` 中的配置，检查必填项是否已经填写；如果有任一必填项未填写，输出一条错误信息，并返回 `False`；否则返回原配置。
+#### `confRcheck(confR:dict,ref:dict=checklt)`
+
+根据 `ref` 中的配置，检查必填项是否已经填写。
+
+如果有任一必填项未填写，输出一条错误信息，并返回 `False`；否则返回原配置。
+
+#### `KEYcheck(confK:dict)`
+
+本程序专用的 KEY 格式检查函数。原理为：
+
+- GLM 的 KEY 和鉴权 token 均由 `.` 作为分隔符；
+- 其他 (DeepSeek、Qwen、Kimi) 均由 `sk-` 开头。后两者可能在未来添加。
+
+因默认配置中 GLM 无 KEY，但在前序环节无法筛查，先检查 GLM 是否存在 KEY。如不存在，删除此键。
+
+然后，进行 KEY 格式检查。检查通过返回配置，不通过返回 `False`。
 
 #### `confGet(confFile:str)`
 
@@ -390,6 +410,7 @@ key: [value,vtype,required]
 ## TODO
 
 - [ ] `sk_conf`：
+      - [ ] `[1]` 疑似没有必要存在下去
       - [ ] 查询配置功能
       - [ ] 更改配置功能
 - [ ] KEY：
@@ -399,7 +420,9 @@ key: [value,vtype,required]
 - [ ] 添加配置：部分选项直接设为默认或配置值。
 - [ ] 增加异常处理：网络异常。
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中。(可能需要增加配置项)
+- [ ] 将 README 中的函数介绍内嵌
 - [ ] Command-Line Switch
+- [ ] GitHub Actions 自动打包
 
 ### Not-Planned
 
@@ -410,3 +433,6 @@ key: [value,vtype,required]
 ## 参考文档
 
 - [DeepSeek API Docs](https://api-docs.deepseek.com/zh-cn/)
+- [BigModel API Docs](https://bigmodel.cn/dev/welcome)
+- [Qwen API Docs](https://help.aliyun.com/zh/model-studio/)
+- [Kimi API Docs](https://platform.moonshot.cn/docs/intro)
