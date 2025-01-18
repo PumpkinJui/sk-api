@@ -4,13 +4,13 @@ from json.decoder import JSONDecodeError
 checklt = {
     "stream": [True,bool,False],
     "balance_chk": [False,bool,False],
-    "series": [{
+    "service": [{
         "DSK": [{
             "KEY": ["",str,True]
         },dict,False],
         "GLM": [{
             "KEY": ["",str,True],
-            "model": ["glm-4-flash",str,False],
+            "model": ["prompt",str,False],
             "jwt": [True,bool,False]
         },dict,False]
     },dict,True]
@@ -70,10 +70,10 @@ def confRcheck(confR:dict,ref:dict=checklt):
     return confR
 
 def KEYcheck(confK:dict): # specific
-    if confK.get('series'):
-        if not confK.get('series').get('GLM').get('KEY'):
-            del confK['series']['GLM']
-        for m,n in confK.get('series').items():
+    if confK.get('service'):
+        if confK.get('service').get('GLM') and not confK.get('service').get('GLM').get('KEY'):
+            del confK['service']['GLM']
+        for m,n in confK.get('service').items():
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')

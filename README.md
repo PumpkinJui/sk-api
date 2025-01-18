@@ -220,15 +220,16 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   选填项，默认为 `true`。
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
-- `series`：`dict`。具体配置各大模型的信息。必填项。
+- `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
   - `GLM`：`dict`。配置 GLM 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
-      选填项，默认为 `glm-4-flash`。可选项*暂定*包括：
+      选填项，默认为 `prompt`。可选项*暂定*包括：
+      - prompt
       - glm-zero-preview
-      - glm-4-plus-0111
+      - glm-4-plus
       - glm-4-air-0111
       - glm-4-long
       - glm-4-airx
@@ -321,19 +322,21 @@ key: [value,vtype,required]
 
 对话主脚本。
 
-#### `exitc(reason:str)`
+#### `exitc(reason:str='')`
 
 输出 `reason` 并抛出 `SystemExit`。这将导致剩余所有部分不再执行，等待用户确认退出。没有返回值。
 
-#### `confGen()`
+#### `conf_read()`
 
-在 `KEY` 不存在时，提示用户输入 `KEY` 并将其写入配置文件。会检查输入是否为空，为空时重复提示输入。
+#### `service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt')`
 
-返回新自定义配置中的合法部分，与默认配置合并后的配置。相当于 `confGet('sk.json')` 除打开配置文件以外的其他操作。
+#### `service_infoget(service:str)`
 
-#### `balance_chk(KEY:str)`
+#### `headers_make(KEY:str,contype:bool=True)`
 
-使用 `requests` 库，向远程服务器发送请求，查询指定 KEY 对应账户的余额。
+#### `balance_chk(url:str)`
+
+使用 `requests` 库，向远程服务器 `url` 发送请求，查询指定 KEY 对应账户的余额。
 
 如果查询成功 (HTTP-200)，因 `INF: total_balance currency left in the DeepSeek balance.` (类似于 `1.23 CNY`) 调用 `exitc(reason)`。
 
@@ -348,7 +351,7 @@ key: [value,vtype,required]
 - 如果已经有了输入内容，将所有内容使用 `\n` 拼接在一起，以 `messages` 格式返回。
 - 如果没有输入内容，因 `Null input; chat ended.` 调用 `exitc(reason)`。
 
-#### `data_gen(msg:list,temp:float,stream:bool)`
+#### `data_gen(msg:list,model:str,max_tokens:int,temp:float,stream:bool)`
 
 根据各参数值，生成 JSON 格式的请求信息并返回。
 
@@ -376,7 +379,7 @@ key: [value,vtype,required]
 
 没有返回值。
 
-#### `chat(KEY:str,stream:bool)`
+#### `chat(stream:bool)`
 
 首先，获取 `Temperature`，并在其不合法时，反复提示正确格式并重新获取输入；此处为空将使用默认的 `1.0`。
 
@@ -392,7 +395,7 @@ key: [value,vtype,required]
 
 首先，获取配置或生成配置。
 
-然后，在 `balance_chk` 为 `True` 时进行余额查询，并因一条生成的余额信息调用 `exitc(reason)`。
+然后，在 `balance_chk` 为 `True` 时进行余额查询：如果指定服务不支持余额查询，则退出。
 
 之后，进行对话。
 
