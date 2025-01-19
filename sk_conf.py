@@ -4,6 +4,8 @@ from json.decoder import JSONDecodeError
 checklt = {
     "stream": [True,bool,False],
     "balance_chk": [False,bool,False],
+    "long_prompt": [False,bool,False],
+    "tool_use": [True,bool,False],
     "service": [{
         "DSK": [{
             "KEY": ["",str,True]
@@ -16,7 +18,7 @@ checklt = {
     },dict,True]
 }
 
-def confDefault(ref:dict=checklt):
+def confDefault(ref:dict=checklt) -> dict:
     confD = {}
     for m,n in ref.items():
         if n[1] == dict:
@@ -31,45 +33,44 @@ def confDefault(ref:dict=checklt):
             confD[m] = n[0]
     return confD
 
-def confCheck(confG:dict,ref:dict=checklt):
+def confCheck(confG:dict,ref:dict=checklt) -> dict:
     confC = {}
     for m,n in confG.items():
-        if ref.get(m) == None:
-            print('WRN: "{}" is an invalid key.'.format(m))
+        if not ref.get(m):
+            print(f'WRN: "{m}" is an invalid key.')
         elif ref.get(m)[1] != type(n):
-            print('WRN：Key "{}" has an invalid value.'.format(m))
+            print(f'WRN：Key "{m}" has an invalid value.')
         elif ref.get(m)[1] == dict:
-            if n == {}:
-                print('WRN: Key "{}" has an empty dict.'.format(m))
+            if not n:
+                print(f'WRN: Key "{m}" has an empty dict.')
             else:
                 confC[m] = confCheck(n,ref.get(m)[0])
         else:
             confC[m] = n
     return confC
 
-def confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt):
+def confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt) -> dict:
     if confRcheck(confE,ref):
         for m,n in confE.items():
             if m not in confI:
                 confI[m] = n
-            elif type(n) == dict:
+            elif isinstance(n,dict):
                 if not confMerge(n,confI.get(m),ref.get(m)[0]):
-                    return False
+                    return {}
             else:
                 confI[m] = n
         return KEYcheck(confI)
         # return confI
-    else:
-        return False
+    return {}
 
-def confRcheck(confR:dict,ref:dict=checklt):
+def confRcheck(confR:dict,ref:dict=checklt) -> dict:
     for m,n in ref.items():
         if n[2] and not confR.get(m):
-            print('ERR: Key "{}" is required.'.format(m))
-            return False
+            print(f'ERR: Key "{m}" is required.')
+            return {}
     return confR
 
-def KEYcheck(confK:dict): # specific
+def KEYcheck(confK:dict) -> dict: # specific
     if confK.get('service'):
         if confK.get('service').get('GLM') and not confK.get('service').get('GLM').get('KEY'):
             del confK['service']['GLM']
@@ -77,14 +78,14 @@ def KEYcheck(confK:dict): # specific
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
-                    return False
+                    return {}
             else:
                 if n.get('KEY')[:3] != 'sk-':
-                    print('The KEY for {} should begin with "sk-".'.format(m))
-                    return False
+                    print(f'The KEY for {m} should begin with "sk-".')
+                    return {}
     return confK
 
-def confGet(confFile:str):
+def confGet(confFile:str) -> dict:
     try:
         with open(confFile,'r') as confF:
             confG = load(confF)
@@ -99,4 +100,4 @@ def confGet(confFile:str):
         return confMerge(confDefault())
     return confMerge(confCheck(confG))
 
-print(confGet('sk.json'))
+# print(confGet('sk.json'))

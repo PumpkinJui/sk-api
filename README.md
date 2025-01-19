@@ -7,7 +7,7 @@
 [![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
 ![Last Commit: When was the last commit made.](https://img.shields.io/github/last-commit/PumpkinJui/sk-api?display_timestamp=author&style=for-the-badge&color=yellow)
 
-通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。
+通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
 嫌 CLI 界面太丑，MarkDown 不渲染？试试 [NextChat](https://app.nextchat.dev/)！  
 个人推荐，非广告；NextChat 与本人无利益关联。
@@ -61,7 +61,7 @@ pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 
 **各有优劣。**
 
-网页版不能设温度，也不能设系统提示词；但是网页版有 DeepThink 和 WebSearch 功能，还能直接输入连续的空行，而且还是免费的。API 虽然几乎相当于没收钱，毕竟还是收了的。
+网页版不能设温度，也不能设系统提示词；但是网页版有更多其他功能，能直接输入连续的空行，而且是免费的。API 虽然几乎相当于没收钱，毕竟还是收了的 (glm-4-flash 除外)。
 
 API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
@@ -132,27 +132,19 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 <details>
 
-用专业一点的说法，就是上面那句：「通过调用 [DeepSeek API](https://api-docs.deepseek.com/zh-cn/)，在 Python 或 CLI 中进行 AI 对话补全。」
+用专业一点的说法，就是上面那句：「通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。」
 
 用更容易理解的说法，就是这样的：(以下内容由本程序辅助生成)
 
 > 简单来说，这个程序就像是一个桥梁，让你可以轻松地与一个聪明的 AI 助手对话，而不需要了解复杂的技术细节。
 >
-> API (应用程序编程接口) 就像是一个「服务员」或「中间人」，它帮助不同的软件或应用程序之间进行沟通和协作。想象一下，你去一家会员制餐厅吃饭。你不需要知道厨房里是如何做菜的，你只需要出示会员卡，告诉服务员你想要什么，服务员会把你的需求传达给厨房，然后把做好的菜端给你。API 就像这个服务员，它让不同的软件系统之间能够互相「点菜」和「上菜」，而不需要知道对方内部的具体实现细节。而 API 密钥则像是那张会员卡，可以用来证明你的身份，如果没有它你就点不了菜，用不了更优惠的价格。
+> API (应用程序编程接口) 就像是一个「服务员」或「中间人」，它帮助不同的软件或应用程序之间进行沟通和协作。想象一下，你去一家会员制餐厅吃饭。你不需要知道厨房里是如何做菜的，你只需要出示会员卡，告诉服务员你想要什么，服务员会把你的需求传达给厨房，然后把做好的菜端给你。
 >
-> 为了与 DeepSeek 进行对话，你可以在命令行界面 (CLI) 运行已经打包好的程序，或者通过 Python 直接运行本程序的源码。
-
-</details>
-
-### DeepSeek 是什么
-
-<details>
-
-**一款 AI 智能助手**，类似于 ChatGPT、Kimi、豆包等，但是由不同的公司开发。也是这家公司的名称 (中文名「深度求索」)
-
-- [DeepSeek 主页](https://www.deepseek.com/)
-- [DeepSeek 网页对话](https://chat.deepseek.com/)
-- [DeepSeek 开放平台](https://platform.deepseek.com/)
+> API 就像这个服务员，它让不同的软件系统之间能够互相「点菜」和「上菜」，而不需要知道对方内部的具体实现细节。
+>
+> 而 API 密钥则像是那张会员卡，可以用来证明你的身份，如果没有它你就点不了菜，用不了更优惠的价格。
+>
+> 为了进行对话，你可以在命令行界面 (CLI) 运行已经打包好的程序，或者通过 Python 直接运行本程序的源码。
 
 </details>
 
@@ -162,11 +154,9 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 **本程序采用 [MIT](LICENSE) 授权，完全免费。**
 
-**对于网页对话来说，DeepSeek *是免费的*；对于 API 请求*则不是*，但是便宜得令人难以置信。**
+**对于网页对话来说 *是免费的*；对于 API 请求*则不是*。**
 
-从我在开发中的测试来看，我玩了整整一周，甚至在沉浸式翻译拿它翻译了一本比较短的电子书，一共花了六毛钱。其中，对话远远没有网页翻译花钱多。
-
-具体定价见[官方文档](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)。
+具体定价见官方文档。[DeepSeek](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)、[GLM](https://open.bigmodel.cn/pricing)。
 
 </details>
 
@@ -180,7 +170,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 还有许多像这样能接入 AI 的软件，[Awesome DeepSeek Integration](https://github.com/deepseek-ai/awesome-deepseek-integration) 中提供了一部分示例。这就是说，通过使用 API，你还可以使用不仅限于本程序的其他许多程序。
 
-通过 API，也不必限于在浏览器里用 DeepSeek 了，本程序实现的就是这个。
+通过 API，也不必限于在浏览器和 APP 里用 AI 了，本程序实现的就是这个。
 
 另外，也不是必须只用 API 不用网页版，这两者并不排斥。
 
@@ -220,6 +210,11 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   选填项，默认为 `true`。
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
+- `long_prompt`：`bool`。设定为 `true` 时，需要两个空行 (三次回车) 才能触发回复；`false` 仅需一个空行 (两次回车)。  
+  适用于粘贴大段中间有空行的内容。系统提示词始终为单行输入，不受此影响。  
+  选填项，默认为 `false`。
+- `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
+  选填项，默认为 `true`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
@@ -231,10 +226,10 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - glm-zero-preview
       - glm-4-plus
       - glm-4-air-0111
-      - glm-4-long
       - glm-4-airx
-      - glm-4-flashx
       - glm-4-flash
+      - glm-4-flashx
+      - glm-4-long
       - glm-4-alltools <!-- 还要额外适配 tools？真是越来越精彩了。-->
       - charglm-4
       - emohaa
@@ -265,11 +260,11 @@ key: [value,vtype,required]
   在此处设置为 `True` 时，推荐将 `value` 设置为 `None`、`""` (如果类型为 `str`) 等空值。  
   这可以使它看上去更整洁。即使不这么设置，也不会影响执行结果。
 
-#### `confDefault(ref:dict=checklt)`
+#### `confDefault(ref:dict=checklt) -> dict`
 
 根据 `ref` 递归式生成并返回默认配置。
 
-#### `confCheck(confG:dict,ref:dict=checklt)`
+#### `confCheck(confG:dict,ref:dict=checklt) -> dict`
 
 根据 `ref` 中的配置，检查 `confG` 中的自定义配置。检查项包括：
 
@@ -281,7 +276,7 @@ key: [value,vtype,required]
 
 检查后，返回合法的自定义配置。
 
-#### `confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt)`
+#### `confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt) -> dict`
 
 首先，检查必填项是否已经填写。未填写必填项将返回 `False`。
 
@@ -289,13 +284,13 @@ key: [value,vtype,required]
 
 最后，检查 KEY 的填写格式。如果格式正确，返回合并后的配置；否则返回 `False`。
 
-#### `confRcheck(confR:dict,ref:dict=checklt)`
+#### `confRcheck(confR:dict,ref:dict=checklt) -> dict`
 
 根据 `ref` 中的配置，检查必填项是否已经填写。
 
 如果有任一必填项未填写，输出一条错误信息，并返回 `False`；否则返回原配置。
 
-#### `KEYcheck(confK:dict)`
+#### `KEYcheck(confK:dict) -> dict`
 
 本程序专用的 KEY 格式检查函数。原理为：
 
@@ -306,7 +301,7 @@ key: [value,vtype,required]
 
 然后，进行 KEY 格式检查。检查通过返回配置，不通过返回 `False`。
 
-#### `confGet(confFile:str)`
+#### `confGet(confFile:str) -> dict`
 
 读取自定义配置文件 `confFile`。该文件应为 JSON 格式。
 
@@ -322,27 +317,27 @@ key: [value,vtype,required]
 
 对话主脚本。
 
-#### `exitc(reason:str='')`
+#### `exitc(reason:str='') -> None`
 
 输出 `reason` 并抛出 `SystemExit`。这将导致剩余所有部分不再执行，等待用户确认退出。没有返回值。
 
-#### `conf_read()`
+#### `conf_read() -> dict`
 
-#### `service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt')`
+#### `service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt') -> str`
 
-#### `service_infoget(service:str)`
+#### `service_infoget(service:str) -> dict`
 
-#### `headers_make(KEY:str,contype:bool=True)`
+#### `token_gen() -> str`
 
-#### `balance_chk(url:str)`
+#### `headers_gen(contype:bool=True) -> dict`
 
-使用 `requests` 库，向远程服务器 `url` 发送请求，查询指定 KEY 对应账户的余额。
+#### `data_gen(msg:list,temp:float,stream:bool) -> str`
 
-如果查询成功 (HTTP-200)，因 `INF: total_balance currency left in the DeepSeek balance.` (类似于 `1.23 CNY`) 调用 `exitc(reason)`。
+根据各参数值，生成 JSON 格式的请求信息并返回。
 
-如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
+#### `temp_get() -> float`
 
-#### `usr_get(rnd:int)`
+#### `usr_get(rnd:int) -> dict`
 
 输出 `User #rnd`，并获取用户的多行输入。
 
@@ -351,11 +346,7 @@ key: [value,vtype,required]
 - 如果已经有了输入内容，将所有内容使用 `\n` 拼接在一起，以 `messages` 格式返回。
 - 如果没有输入内容，因 `Null input; chat ended.` 调用 `exitc(reason)`。
 
-#### `data_gen(msg:list,model:str,max_tokens:int,temp:float,stream:bool)`
-
-根据各参数值，生成 JSON 格式的请求信息并返回。
-
-#### `ast_nostream(url:str,headers:dict,msg:list,temp:float)`
+#### `ast_nostream(msg:list,temp:float) -> None`
 
 在 `stream` 为 `False` 时执行的部分。
 
@@ -367,7 +358,7 @@ key: [value,vtype,required]
 
 没有返回值。
 
-#### `ast_stream(url:str,headers:dict,msg:list,temp:float)`
+#### `ast_stream(msg:list,temp:float) -> None`
 
 在 `stream` 为 `True` 时执行的内容。
 
@@ -379,7 +370,15 @@ key: [value,vtype,required]
 
 没有返回值。
 
-#### `chat(stream:bool)`
+#### `balance_chk() -> None`
+
+使用 `requests` 库，向远程服务器 `url` 发送请求，查询指定 KEY 对应账户的余额。
+
+如果查询成功 (HTTP-200)，因 `INF: total_balance currency left in the DeepSeek balance.` (类似于 `1.23 CNY`) 调用 `exitc(reason)`。
+
+如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
+
+#### ` chat() -> None`
 
 首先，获取 `Temperature`，并在其不合法时，反复提示正确格式并重新获取输入；此处为空将使用默认的 `1.0`。
 
