@@ -1,86 +1,264 @@
-import requests
+from datetime import datetime,UTC
 import json
-from sk_conf import *
 from traceback import print_exc
+import requests
+from jwt import encode
+from sk_conf import confGet
 
-def exitc(reason:str):
+def exitc(reason:str='') -> None:
     if reason:
         print(reason)
     raise SystemExit
 
-def confGen():
-    try:
-        with open('sk.json','r') as sk:
-            SKjson = json.load(sk)
-    except:
-        SKjson = {}
+def conf_read() -> dict:
+    confR = confGet('sk.json')
+    if not confR:
+        with open('sk.json','a'):
+            pass
+        exitc('TIP: Please check your conf file.')
+    service_list = tuple(confR.get('service').keys())
+    service_name = service_model('service',service_list,False)
+    service_info = service_infoget(service_name)
+    service_conf = confR['service'].get(service_name)
+    del confR['service']
+    confR.update(service_conf)
+    if not confR.get('balance_chk'):
+        if service_conf.get('model'):
+            model_info = service_model(
+                'model',
+                service_info.get('models'),
+                True,
+                service_conf.get('model')
+            )
+        else:
+            model_info = service_model(
+                'model',
+                service_info.get('models'),
+                True
+            )
+        confR['model'] = model_info[0]
+        confR['max_tokens'] = model_info[1]
+        confR['tools'] = model_info[2]
+    confR.update(service_info)
+    del confR['models']
+    # print(confR)
+    return confR
+
+def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
+    if isinstance(lst[0],tuple):
+        lt = []
+        for i in lst:
+            lt.append(i[0])
+        lt = tuple(lt)
+    else:
+        lt = lst
+    if sts != 'prompt' and sts not in lt:
+        print(f'WRN: {sts} is not a valid {keyword}.')
+    if sts != 'prompt' and sts in lt:
+        print(f'INF: {keyword.capitalize()} {sts} selected.')
+        return lst[lt.index(sts)]
+    if len(lt) > 1:
+        print(f'INF: Multiple {keyword}s available.')
+        print('INF: Select one from below by name.')
+        print('TIP: Case insensitive.')
+        print('TIP: Fragments accepted; guessed by order.')
+        k = 0
+        max_len = 0
+        for i in lt:
+            max_len = max(max_len,len(i))
+        while k < len(lt):
+            if k % 2 == 0:
+                print('INF:',lt[k].ljust(max_len),end='\t')
+                k += 1
+            else:
+                print(lt[k])
+                k += 1
+        if k % 2 == 1:
+            print()
+        while True:
+            if lower:
+                chn = input('REQ: ').lower()
+            else:
+                chn = input('REQ: ').upper()
+            if not chn:
+                pass
+            elif chn in lt:
+                print(f'INF: Selection accepted: {chn}.')
+                return lst[lt.index(chn)]
+            else:
+                for m,n in enumerate(lt):
+                    if chn in n:
+                        print(f'INF: Selection guessed: {n}. Accepted.')
+                        return lst[m]
+            print('ERR: Selection invalid.')
+    print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
+    return lst[0]
+
+def service_infoget(service:str) -> dict:
+    today = datetime.now(UTC).strftime('%Y-%m-%d')
+    glm_search_prompt = '\n'.join([
+        '','',
+        '## 来自互联网的信息','',
+        '{search_result}','',
+        '## 当前 UTC 日期','',
+        today,'',
+        '「当地时间」和用户所在时区的时间可能有所不同。','',
+        '## 要求','',
+        '根据最新发布的信息回答用户问题。','',
+        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
+        ''
+    ])
+    glm_tools = [{
+        "type": "web_search",
+        "web_search": {
+            "enable": True,
+            "search_prompt": glm_search_prompt
+        }
+    }]
+    info = {
+        'DSK': {
+            'name': 'DSK',
+            'full_name': 'DeepSeek',
+            'cht_url': 'https://api.deepseek.com/chat/completions',
+            'chk_url': 'https://api.deepseek.com/user/balance',
+            'models': (('deepseek-chat',8192,None),),
+            'temp_range': (2,1.00)
+        },
+        'GLM': {
+            'name': 'GLM',
+            'full_name': 'ChatGLM',
+            'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+            'chk_url': None,
+            'models': (
+                ('glm-zero-preview',None,None),
+                ('glm-4-plus',None,glm_tools),
+                ('glm-4-air-0111',None,glm_tools),
+                ('glm-4-airx',None,glm_tools),
+                ('glm-4-flash',None,glm_tools),
+                ('glm-4-flashx',None,glm_tools),
+                ('glm-4-long',None,glm_tools),
+                ('codegeex-4',8192,None),
+                ('charglm-4',4095,None),
+                ('emohaa',None,None)
+            ),
+            'temp_range': (1,0.95)
+        }
+    }
+    return info.get(service)
+
+def token_gen() -> str:
+    if not conf.get('jwt'):
+        return conf.get('KEY')
+    KEYs = conf.get('KEY').split(".")
+    if len(KEYs) == 3:
+        return conf.get('KEY')
+    if len(KEYs) != 2:
+        exitc('ERR: Invalid KEY.')
+    payload = {
+        "api_key": KEYs[0],
+        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 60 * 1000,
+        "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
+    }
+    return encode(
+        payload,
+        KEYs[1],
+        algorithm="HS256",
+        headers={"alg": "HS256", "sign_type": "SIGN"},
+    )
+
+def headers_gen(contype:bool=True) -> dict:
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token_gen()}'
+    }
+    if contype:
+        headers['Content-Type'] = 'application/json'
+    # print(headers)
+    return headers
+
+def data_gen(msg:list,temp:float,stream:bool) -> str:
+    payload = {
+        "messages": msg,
+        "model": conf.get('model'),
+        "max_tokens": conf.get('max_tokens'),
+        "temperature": temp,
+        "stream": stream
+    }
+    if (conf.get('tool_use') and conf.get('tools')):
+        payload["tools"] = conf.get('tools')
+    elif conf.get('model') == 'emohaa':
+        payload['meta'] = conf.get('meta')
+    payload_json = json.dumps(payload)
+    # print(msg,payload_json,sep='\n')
+    return payload_json
+
+def temp_get() -> float:
     while True:
         try:
-            print('INF: Enter your DeepSeek API KEY.')
-            KEY = input('REQ: ')
-            if KEY == '':
+            temp = input('TEMPERATURE: ')
+            if temp == '':
+                print()
+                return conf.get('temp_range')[1]
+            temp = round(float(temp),2)
+            if not 0 <= temp <= conf.get('temp_range')[0]:
                 raise
-            break
+            print()
+            return temp
         except:
-            print('ERR: Null KEY.')
-    SKjson['KEY'] = KEY
-    with open('sk.json','w') as sk:
-        json.dump(SKjson,sk)
-    print('INF: Configurations saved!')
-    print('INF: Applying new configurations...')
-    return confMerge(confDefault(),confCheck(SKjson))
+            print('ERR: Temperature invalid.')
+            print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
+            print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
 
-def balance_chk(KEY:str):
-    url = "https://api.deepseek.com/user/balance"
-    payload={}
-    headers = {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer {}'.format(KEY)
-    }
-    rsp = requests.request("GET", url, headers=headers, data=payload)
-    if rsp.status_code == requests.codes.ok:
-        exitc('INF: {} {} left in the DeepSeek balance.'.format(json.loads(rsp.text)['balance_infos'][0]['total_balance'],json.loads(rsp.text)['balance_infos'][0]['currency']))
-    else:
-        exitc('ERR: {} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
-
-def usr_get(rnd:int):
-    print('User #{}'.format(rnd))
+def usr_get(rnd:int) -> dict:
+    print(f'USER #{rnd}')
     lines = []
+    nul_count = 0
     while True:
         line = input()
-        if line == "":
-            break
+        if conf.get('long_prompt'):
+            if line == '':
+                if nul_count:
+                    del lines[-1]
+                    break
+                nul_count += 1
+            elif nul_count:
+                nul_count = 0
+        else:
+            if line == '':
+                break
         lines.append(line)
-    if lines == []:
-        exitc('Null input, chat ended.')
+    if not lines:
+        exitc('INF: Null input, chat ended.')
     usr = '\n'.join(lines)
     return {'role': 'user', 'content': usr}
 
-def data_gen(msg:list,temp:float,stream:bool):
-    payload = json.dumps({
-      "messages": msg,
-      "model": "deepseek-chat",
-      "max_tokens": 8192,
-      "temperature": temp,
-      "stream": stream
-    })
-    return payload
-
-def ast_nostream(url:str,headers:dict,msg:list,temp:float):
-    # print(data_gen(msg,temp,False))
-    rsp = requests.request("POST", url, headers=headers, data=data_gen(msg,temp,False))
+def ast_nostream(msg:list,temp:float) -> None:
+    rsp = requests.request(
+        "POST",
+        conf.get('cht_url'),
+        headers=headers_gen(),
+        data=data_gen(msg,temp,False)
+    )
     if rsp.status_code == requests.codes.ok:
         ast = json.loads(rsp.text)['choices'][0]['message']['content']
         print(ast)
         msg.append({'role': 'assistant', 'content': ast})
         print()
     else:
-        exitc('{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
+        exitc('ERR: {} {}'.format(
+            rsp.status_code,
+            json.loads(rsp.text)['error']['message']
+        ))
 
-def ast_stream(url:str,headers:dict,msg:list,temp:float):
-    # print(data_gen(msg,temp,True))
+def ast_stream(msg:list,temp:float) -> None:
     ast = ''
-    rsp = requests.request("POST",url, headers=headers, data=data_gen(msg,temp,True),stream=True)
+    rsp = requests.request(
+        "POST",
+        conf.get('cht_url'),
+        headers=headers_gen(),
+        data=data_gen(msg,temp,True),
+        stream=True
+    )
     if rsp.status_code == requests.codes.ok:
         for line in rsp.iter_lines():
             if line:
@@ -95,67 +273,98 @@ def ast_stream(url:str,headers:dict,msg:list,temp:float):
         print()
         print()
     else:
-        exitc('{} {}'.format(rsp.status_code,json.loads(rsp.text)['error']['message']))
+        exitc('ERR: {} {}'.format(
+            rsp.status_code,
+            json.loads(rsp.text)['error']['message']
+        ))
 
-def chat(KEY:str,stream:bool):
-    url = "https://api.deepseek.com/chat/completions"
-    headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer {}'.format(KEY)
+def emohaa_meta() -> dict:
+    user_name = input('USER NAME\n')
+    if not user_name:
+        user_name = '用户'
+    print()
+    user_info = input('USER INFO\n')
+    if not user_info:
+        user_info = '用户对心理学不太了解。'
+    print()
+    bot_info = '，'.join([
+        'Emohaa 学习了经典的 Hill 助人理论',
+        '拥有人类心理咨询师的专业话术能力',
+        '具有较强的倾听、情感映射、共情等情绪支持能力',
+        '帮助用户了解自身想法和感受，学习应对情绪问题',
+        '帮助用户实现乐观、积极的心理和情感状态。'
+    ])
+    meta= {
+        "user_name": user_name,
+        "user_info": user_info,
+        "bot_name": "Emohaa",
+        "bot_info": bot_info
     }
+    return meta
+
+def site_models() -> None:
+    if conf.get('model') == 'emohaa':
+        conf['meta'] = emohaa_meta()
+
+def balance_chk() -> None:
+    payload={}
+    rsp = requests.request(
+        "GET",
+        conf.get('chk_url'),
+        headers=headers_gen(False),
+        data=payload
+    )
+    if rsp.status_code == requests.codes.ok:
+        exitc('INF: {} {} left in the {} balance.'.format(
+            json.loads(rsp.text)['balance_infos'][0]['total_balance'],
+            json.loads(rsp.text)['balance_infos'][0]['currency'],
+            conf.get('full_name')
+        ))
+    else:
+        exitc('ERR: {} {}'.format(
+            rsp.status_code,
+            json.loads(rsp.text)['error']['message']
+        ))
+
+def chat() -> None:
     msg = []
     rnd = 0
-
-    while True:
-        try:
-            temp = input('Temperature: ')
-            if temp == '':
-                temp = 1.0
-                break
-            temp = round(float(temp),1)
-            if not 0 <= temp <= 2:
-                raise
-            break
-        except:
-            print('Invalid temperature. Should be a float between 0.0 and 2.0, inclusive of the boundaries.')
-
-    sys = input('     System: ')
+    temp = temp_get()
+    sys = input('SYSTEM\n')
     if sys == '':
         sys = 'You are a helpful assistant.'
     msg.append({'role': 'system', 'content': sys})
-
     print()
-
+    site_models()
     while True:
         rnd += 1
         msg.append(usr_get(rnd))
-        print('Assistant #{}'.format(rnd))
-        if not stream:
-            ast_nostream(url,headers,msg,temp)
+        print(f'ASSISTANT #{rnd}')
+        if not conf.get('stream'):
+            ast_nostream(msg,temp)
         else:
-            ast_stream(url,headers,msg,temp)
+            ast_stream(msg,temp)
 
 try:
-    conf = confGet('sk.json')
-    if not conf:
-        conf = confGen()
+    conf = conf_read()
     print()
-
-    if conf['balance_chk']:
-        balance_chk(conf['KEY'])
-
-    chat(conf['KEY'],conf['stream'])
+    if conf.get('balance_chk'):
+        if conf.get('chk_url'):
+            balance_chk()
+        exitc(f'ERR: Balance check is unsupported for {conf.get('full_name')}.')
+    # print(data_gen([],0,False))
+    # exitc('INF: Debug Exit.')
+    chat()
 except SystemExit:
     pass
 except KeyboardInterrupt:
     print()
-    print('Aborted.')
+    print('INF: Aborted.')
 except:
     print()
     print_exc()
     print()
-    print('Unexcepted error(s) occurred.')
-    print('See above for more info.')
+    print('ERR: Unexcepted error(s) occurred.')
+    print('TIP: See above for more info.')
 finally:
-    pause = input('Press Enter to exit...')
+    pause = input('INF: Press Enter to exit...')
