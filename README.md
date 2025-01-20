@@ -214,14 +214,14 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   适用于粘贴大段中间有空行的内容。系统提示词始终为单行输入，不受此影响。  
   选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
-  选填项，默认为 `true`。这不会影响 `glm-4-alltools`。
+  选填项，默认为 `true`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
   - `GLM`：`dict`。配置 GLM 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
-      选填项，默认为 `prompt`。可选项*暂定*包括：
+      选填项，默认为 `prompt`。可选项包括：
       - prompt
       - glm-zero-preview
       - glm-4-plus
@@ -230,10 +230,9 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - glm-4-flash
       - glm-4-flashx
       - glm-4-long
-      - glm-4-alltools <!-- 还要额外适配 tools？真是越来越精彩了。-->
+      - codegeex-4
       - charglm-4
       - emohaa
-      - codegeex-4
     - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密 (即使用鉴权 token 进行鉴权)。  
       选填项，默认为 `True`。这不影响直接传入鉴权 token。
 
@@ -370,6 +369,10 @@ key: [value,vtype,required]
 
 没有返回值。
 
+#### `emohaa_meta() -> dict`
+
+#### `site_models() -> None`
+
 #### `balance_chk() -> None`
 
 使用 `requests` 库，向远程服务器 `url` 发送请求，查询指定 KEY 对应账户的余额。
@@ -428,6 +431,8 @@ key: [value,vtype,required]
 - [ ] 将 README 中的函数介绍内嵌
 - [ ] Command-Line Switch
 - [ ] GitHub Actions 自动打包
+- [ ] 【高难】适配 `glm-4-alltools`
+- [ ] 【高难】多模型对比
 
 ### Not-Planned
 

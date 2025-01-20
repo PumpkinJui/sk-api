@@ -115,11 +115,6 @@ def service_infoget(service:str) -> dict:
             "search_prompt": glm_search_prompt
         }
     }]
-    glm_alltools = [
-        {"type": "code_interpreter"},
-        {"type": "drawing_tool"},
-        {"type": "web_browser"}
-    ]
     info = {
         'DSK': {
             'name': 'DSK',
@@ -135,14 +130,13 @@ def service_infoget(service:str) -> dict:
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
             'chk_url': None,
             'models': (
-                ('glm-zero-preview',16000,None),
+                ('glm-zero-preview',None,None),
                 ('glm-4-plus',None,glm_tools),
                 ('glm-4-air-0111',None,glm_tools),
                 ('glm-4-airx',None,glm_tools),
                 ('glm-4-flash',None,glm_tools),
                 ('glm-4-flashx',None,glm_tools),
                 ('glm-4-long',None,glm_tools),
-                ('glm-4-alltools',None,glm_alltools),
                 ('codegeex-4',8192,None),
                 ('charglm-4',4095,None),
                 ('emohaa',None,None)
@@ -190,8 +184,10 @@ def data_gen(msg:list,temp:float,stream:bool) -> str:
         "temperature": temp,
         "stream": stream
     }
-    if (conf.get('tool_use') and conf.get('tools')) or conf.get('model') == 'glm-4-alltools':
+    if (conf.get('tool_use') and conf.get('tools')):
         payload["tools"] = conf.get('tools')
+    elif conf.get('model') == 'emohaa':
+        payload['meta'] = conf.get('meta')
     payload_json = json.dumps(payload)
     # print(msg,payload_json,sep='\n')
     return payload_json
@@ -282,6 +278,34 @@ def ast_stream(msg:list,temp:float) -> None:
             json.loads(rsp.text)['error']['message']
         ))
 
+def emohaa_meta() -> dict:
+    user_name = input('USER NAME\n')
+    if not user_name:
+        user_name = '用户'
+    print()
+    user_info = input('USER INFO\n')
+    if not user_info:
+        user_info = '用户对心理学不太了解。'
+    print()
+    bot_info = '，'.join([
+        'Emohaa 学习了经典的 Hill 助人理论',
+        '拥有人类心理咨询师的专业话术能力',
+        '具有较强的倾听、情感映射、共情等情绪支持能力',
+        '帮助用户了解自身想法和感受，学习应对情绪问题',
+        '帮助用户实现乐观、积极的心理和情感状态。'
+    ])
+    meta= {
+        "user_name": user_name,
+        "user_info": user_info,
+        "bot_name": "Emohaa",
+        "bot_info": bot_info
+    }
+    return meta
+
+def site_models() -> None:
+    if conf.get('model') == 'emohaa':
+        conf['meta'] = emohaa_meta()
+
 def balance_chk() -> None:
     payload={}
     rsp = requests.request(
@@ -311,6 +335,7 @@ def chat() -> None:
         sys = 'You are a helpful assistant.'
     msg.append({'role': 'system', 'content': sys})
     print()
+    site_models()
     while True:
         rnd += 1
         msg.append(usr_get(rnd))
