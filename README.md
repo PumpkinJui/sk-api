@@ -218,7 +218,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
-  - `GLM`：`dict`。配置 GLM 的信息。选填项。
+  - `GLM`：`dict`。配置 ChatGLM 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
       选填项，默认为 `prompt`。可选项包括：
@@ -330,6 +330,8 @@ key: [value,vtype,required]
 
 #### `headers_gen(contype:bool=True) -> dict`
 
+根据使用场景 (`contype` 在 `balance_chk` 场景为 `False`)，生成请求 headers 并返回。
+
 #### `data_gen(msg:list,temp:float,stream:bool) -> str`
 
 根据各参数值，生成 JSON 格式的请求信息并返回。
@@ -429,6 +431,7 @@ key: [value,vtype,required]
 - [ ] 增加异常处理：网络异常
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中 (可能需要增加配置项)
 - [ ] 将 README 中的函数介绍内嵌
+- [ ] 截断自动继续
 - [ ] Command-Line Switch
 - [ ] GitHub Actions 自动打包
 - [ ] 【高难】适配 `glm-4-alltools`

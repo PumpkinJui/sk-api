@@ -6,6 +6,10 @@ from jwt import encode
 from sk_conf import confGet
 
 def exitc(reason:str='') -> None:
+    """Raise SystemExit and give a reason.
+
+    No return provided.
+    """
     if reason:
         print(reason)
     raise SystemExit
@@ -147,6 +151,17 @@ def service_infoget(service:str) -> dict:
     return info.get(service)
 
 def token_gen() -> str:
+    """Generate a jwt token for jwt-supported services.
+
+    Jwt-support ability is judged by the `jwt` value in conf.
+    Currently the only one supporting jwt is GLM.
+
+    If the desired service is not jwt-supported,
+    return the KEY directly as str.
+
+    If it is, generate a token that expires in 30 sec,
+    and return it as str.
+    """
     if not conf.get('jwt'):
         return conf.get('KEY')
     KEYs = conf.get('KEY').split(".")
@@ -156,7 +171,7 @@ def token_gen() -> str:
         exitc('ERR: Invalid KEY.')
     payload = {
         "api_key": KEYs[0],
-        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 60 * 1000,
+        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 30 * 1000,
         "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
     }
     return encode(
@@ -193,6 +208,14 @@ def data_gen(msg:list,temp:float,stream:bool) -> str:
     return payload_json
 
 def temp_get() -> float:
+    """Get TEMPERATURE from user.
+
+    Also check whether temp is within range.
+    If temp is out of range,
+    give an error message and some tips, and try again.
+
+    Return the temp x.xx as float.
+    """
     while True:
         try:
             temp = input('TEMPERATURE: ')
@@ -279,6 +302,10 @@ def ast_stream(msg:list,temp:float) -> None:
         ))
 
 def emohaa_meta() -> dict:
+    """Emohaa-dedicated meta generator.
+
+    Return the meta as dict.
+    """
     user_name = input('USER NAME\n')
     if not user_name:
         user_name = '用户'
@@ -303,6 +330,14 @@ def emohaa_meta() -> dict:
     return meta
 
 def site_models() -> None:
+    """Carry everything specifically for some model.
+
+    Some models have annoying features that the general one cannot handle.
+    Make them into functions and land them here,
+    so they will appear after SYSTEM if input is needed.
+
+    No return provided.
+    """
     if conf.get('model') == 'emohaa':
         conf['meta'] = emohaa_meta()
 
