@@ -1,5 +1,5 @@
+from datetime import datetime,UTC
 import json
-from time import time
 from traceback import print_exc
 import requests
 from jwt import encode
@@ -22,33 +22,41 @@ def conf_read() -> dict:
     service_conf = confR['service'].get(service_name)
     del confR['service']
     confR.update(service_conf)
-    if not confR.get('tool_use'):
-        del conf['tools']
     if not confR.get('balance_chk'):
         if service_conf.get('model'):
-            model_name = service_model(
+            model_info = service_model(
                 'model',
                 service_info.get('models'),
                 True,
                 service_conf.get('model')
             )
         else:
-            model_name = service_model(
+            model_info = service_model(
                 'model',
                 service_info.get('models'),
                 True
             )
-        confR['model'] = model_name
+        confR['model'] = model_info[0]
+        confR['max_tokens'] = model_info[1]
+        confR['tools'] = model_info[2]
     confR.update(service_info)
     del confR['models']
+    # print(confR)
     return confR
 
-def service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt') -> str:
+def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
+    if isinstance(lst[0],tuple):
+        lt = []
+        for i in lst:
+            lt.append(i[0])
+        lt = tuple(lt)
+    else:
+        lt = lst
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: {sts} is not a valid {keyword}.')
     if sts != 'prompt' and sts in lt:
         print(f'INF: {keyword.capitalize()} {sts} selected.')
-        return sts
+        return lst[lt.index(sts)]
     if len(lt) > 1:
         print(f'INF: Multiple {keyword}s available.')
         print('INF: Select one from below by name.')
@@ -76,51 +84,70 @@ def service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt') -> str:
                 pass
             elif chn in lt:
                 print(f'INF: Selection accepted: {chn}.')
-                return chn
+                return lst[lt.index(chn)]
             else:
-                for i in lt:
-                    if chn in i:
-                        print(f'INF: Selection guessed: {i}. Accepted.')
-                        return i
+                for m,n in enumerate(lt):
+                    if chn in n:
+                        print(f'INF: Selection guessed: {n}. Accepted.')
+                        return lst[m]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
-    return lt[0]
+    return lst[0]
 
 def service_infoget(service:str) -> dict:
+    today = datetime.now(UTC).strftime('%Y-%m-%d')
+    glm_search_prompt = '\n'.join([
+        '','',
+        '## 来自互联网的信息','',
+        '{search_result}','',
+        '## 当前 UTC 日期','',
+        today,'',
+        '「当地时间」和用户所在时区的时间可能有所不同。','',
+        '## 要求','',
+        '根据最新发布的信息回答用户问题。','',
+        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
+        ''
+    ])
+    glm_tools = [{
+        "type": "web_search",
+        "web_search": {
+            "enable": True,
+            "search_prompt": glm_search_prompt
+        }
+    }]
+    glm_alltools = [
+        {"type": "code_interpreter"},
+        {"type": "drawing_tool"},
+        {"type": "web_browser"}
+    ]
     info = {
         'DSK': {
             'name': 'DSK',
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
-            'models': ('deepseek-chat',),
-            'temp_range': (2,1.00),
-            'max_tokens': 8192,
-            'tools': None
+            'models': (('deepseek-chat',8192,None),),
+            'temp_range': (2,1.00)
         },
         'GLM': {
             'name': 'GLM',
-            'full_name': 'GLM',
+            'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
             'chk_url': None,
             'models': (
-                'glm-zero-preview',
-                'glm-4-plus',
-                'glm-4-air-0111',
-                'glm-4-airx',
-                'glm-4-flash',
-                'glm-4-flashx',
-                'glm-4-long',
-                'glm-4-alltools',
-                'charglm-4',
-                'emohaa',
-                'codegeex-4'),
-            'temp_range': (1,0.95),
-            'max_tokens': None,
-            'tools': [{
-                "type": "web_search",
-                "web_search": {"enable": True}
-            }]
+                ('glm-zero-preview',16000,None),
+                ('glm-4-plus',None,glm_tools),
+                ('glm-4-air-0111',None,glm_tools),
+                ('glm-4-airx',None,glm_tools),
+                ('glm-4-flash',None,glm_tools),
+                ('glm-4-flashx',None,glm_tools),
+                ('glm-4-long',None,glm_tools),
+                ('glm-4-alltools',None,glm_alltools),
+                ('codegeex-4',8192,None),
+                ('charglm-4',4095,None),
+                ('emohaa',None,None)
+            ),
+            'temp_range': (1,0.95)
         }
     }
     return info.get(service)
@@ -135,8 +162,8 @@ def token_gen() -> str:
         exitc('ERR: Invalid KEY.')
     payload = {
         "api_key": KEYs[0],
-        "exp": int(round(time() * 1000)) + 60 * 1000,
-        "timestamp": int(round(time() * 1000)),
+        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 60 * 1000,
+        "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
     }
     return encode(
         payload,
@@ -163,7 +190,7 @@ def data_gen(msg:list,temp:float,stream:bool) -> str:
         "temperature": temp,
         "stream": stream
     }
-    if conf.get('tool_use'):
+    if (conf.get('tool_use') and conf.get('tools')) or conf.get('model') == 'glm-4-alltools':
         payload["tools"] = conf.get('tools')
     payload_json = json.dumps(payload)
     # print(msg,payload_json,sep='\n')
@@ -300,6 +327,8 @@ try:
         if conf.get('chk_url'):
             balance_chk()
         exitc(f'ERR: Balance check is unsupported for {conf.get('full_name')}.')
+    # print(data_gen([],0,False))
+    # exitc('INF: Debug Exit.')
     chat()
 except SystemExit:
     pass

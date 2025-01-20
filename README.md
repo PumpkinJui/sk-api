@@ -214,7 +214,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   适用于粘贴大段中间有空行的内容。系统提示词始终为单行输入，不受此影响。  
   选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
-  选填项，默认为 `true`。
+  选填项，默认为 `true`。这不会影响 `glm-4-alltools`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
@@ -411,6 +411,9 @@ key: [value,vtype,required]
 
 ## TODO
 
+- [ ] 适配更多服务
+      - [ ] QWEN
+      - [ ] KIMI
 - [ ] `sk_conf`：
       - [ ] `[1]` 疑似没有必要存在下去
       - [ ] 查询配置功能
@@ -419,9 +422,9 @@ key: [value,vtype,required]
       - [ ] 加密存储
       - [ ] 多个 KEY，分压
 - [ ] 减少输出内容。(可能需要增加配置项)
-- [ ] 添加配置：部分选项直接设为默认或配置值。
-- [ ] 增加异常处理：网络异常。
-- [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中。(可能需要增加配置项)
+- [ ] 添加配置：部分选项直接设为默认或配置值
+- [ ] 增加异常处理：网络异常
+- [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中 (可能需要增加配置项)
 - [ ] 将 README 中的函数介绍内嵌
 - [ ] Command-Line Switch
 - [ ] GitHub Actions 自动打包
@@ -431,6 +434,7 @@ key: [value,vtype,required]
 - MarkDown/LaTeX 渲染
 - 历史记录
 - 中途更改 Temperature 和 System Prompt
+- 更改 `search_prompt`
 
 ## 参考文档
 
