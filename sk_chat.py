@@ -43,6 +43,8 @@ def conf_read() -> dict:
         confR['model'] = model_info[0]
         confR['max_tokens'] = model_info[1]
         confR['tools'] = model_info[2]
+        confR['msg'] = []
+        confR['rnd'] = 0
     confR.update(service_info)
     del confR['models']
     # print(confR)
@@ -125,7 +127,10 @@ def service_infoget(service:str) -> dict:
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
-            'models': (('deepseek-chat',8192,None),),
+            'models': (
+                ('deepseek-chat',8192,None),
+                ('deepseek-reasoner',8192,None)
+            ),
             'temp_range': (2,1.00)
         },
         'GLM': {
@@ -191,20 +196,20 @@ def headers_gen(contype:bool=True) -> dict:
     # print(headers)
     return headers
 
-def data_gen(msg:list,temp:float,stream:bool) -> str:
+def data_gen() -> str:
     payload = {
-        "messages": msg,
+        "messages": conf.get('msg'),
         "model": conf.get('model'),
         "max_tokens": conf.get('max_tokens'),
-        "temperature": temp,
-        "stream": stream
+        "temperature": conf.get('temp'),
+        "stream": conf.get('stream')
     }
-    if (conf.get('tool_use') and conf.get('tools')):
+    if conf.get('tool_use') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
         payload['meta'] = conf.get('meta')
     payload_json = json.dumps(payload)
-    # print(msg,payload_json,sep='\n')
+    # print(conf.get('msg'),payload_json,sep='\n')
     return payload_json
 
 def temp_get() -> float:
@@ -214,6 +219,7 @@ def temp_get() -> float:
     If temp is out of range,
     give an error message and some tips, and try again.
 
+    Won't run if `deepseek-reasoner` is in use.
     Return the temp x.xx as float.
     """
     while True:
@@ -232,8 +238,8 @@ def temp_get() -> float:
             print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
             print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
 
-def usr_get(rnd:int) -> dict:
-    print(f'USER #{rnd}')
+def usr_get() -> dict:
+    print(f'USER #{conf.get("rnd")}')
     lines = []
     nul_count = 0
     while True:
@@ -255,17 +261,21 @@ def usr_get(rnd:int) -> dict:
     usr = '\n'.join(lines)
     return {'role': 'user', 'content': usr}
 
-def ast_nostream(msg:list,temp:float) -> None:
+def ast_nostream() -> None:
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
-        headers=headers_gen(),
-        data=data_gen(msg,temp,False)
+        headers = headers_gen(),
+        data = data_gen()
     )
     if rsp.status_code == requests.codes.ok:
+        if conf.get('model') == 'deepseek-reasoner':
+            print(json.loads(rsp.text)['choices'][0]['message']['reasoning_content'])
+            print()
+            print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
         ast = json.loads(rsp.text)['choices'][0]['message']['content']
         print(ast)
-        msg.append({'role': 'assistant', 'content': ast})
+        conf['msg'].append({'role': 'assistant', 'content': ast})
         print()
     else:
         exitc('ERR: {} {}'.format(
@@ -273,14 +283,15 @@ def ast_nostream(msg:list,temp:float) -> None:
             json.loads(rsp.text)['error']['message']
         ))
 
-def ast_stream(msg:list,temp:float) -> None:
+def ast_stream() -> None:
     ast = ''
+    gocon = True
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
-        headers=headers_gen(),
-        data=data_gen(msg,temp,True),
-        stream=True
+        headers = headers_gen(),
+        data = data_gen(),
+        stream = True
     )
     if rsp.status_code == requests.codes.ok:
         for line in rsp.iter_lines():
@@ -289,10 +300,18 @@ def ast_stream(msg:list,temp:float) -> None:
                 if data == '[DONE]':
                     break
                 json_data = json.loads(data)
-                delta = json_data['choices'][0]['delta'].get('content')
-                ast += delta
+                delta = json_data.get('choices')[0].get('delta').get('content')
+                if delta or delta == '':
+                    ast += delta
+                    if not gocon:
+                        print('\n')
+                        print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
+                        gocon = True
+                else:
+                    delta = json_data.get('choices')[0].get('delta').get('reasoning_content')
+                    gocon = False
                 print(delta,end='',flush=True)
-        msg.append({'role': 'assistant', 'content': ast})
+        conf['msg'].append({'role': 'assistant', 'content': ast})
         print()
         print()
     else:
@@ -335,6 +354,7 @@ def site_models() -> None:
     Some models have annoying features that the general one cannot handle.
     Make them into functions and land them here,
     so they will appear after SYSTEM if input is needed.
+    Typically, conf should be modified to implement any changes.
 
     No return provided.
     """
@@ -342,12 +362,11 @@ def site_models() -> None:
         conf['meta'] = emohaa_meta()
 
 def balance_chk() -> None:
-    payload={}
     rsp = requests.request(
         "GET",
         conf.get('chk_url'),
-        headers=headers_gen(False),
-        data=payload
+        headers = headers_gen(False),
+        data = {}
     )
     if rsp.status_code == requests.codes.ok:
         exitc('INF: {} {} left in the {} balance.'.format(
@@ -362,23 +381,25 @@ def balance_chk() -> None:
         ))
 
 def chat() -> None:
-    msg = []
-    rnd = 0
-    temp = temp_get()
+    if conf.get('model') != 'deepseek-reasoner':
+        conf['temp'] = temp_get()
     sys = input('SYSTEM\n')
     if sys == '':
         sys = 'You are a helpful assistant.'
-    msg.append({'role': 'system', 'content': sys})
+    conf['msg'].append({'role': 'system', 'content': sys})
     print()
     site_models()
     while True:
-        rnd += 1
-        msg.append(usr_get(rnd))
-        print(f'ASSISTANT #{rnd}')
-        if not conf.get('stream'):
-            ast_nostream(msg,temp)
+        conf['rnd'] += 1
+        conf['msg'].append(usr_get())
+        if conf.get('model') != 'deepseek-reasoner':
+            print(f'ASSISTANT #{conf.get("rnd")}')
         else:
-            ast_stream(msg,temp)
+            print(f'ASSISTANT REASONING #{conf.get("rnd")}')
+        if not conf.get('stream'):
+            ast_nostream()
+        else:
+            ast_stream()
 
 try:
     conf = conf_read()
@@ -386,7 +407,7 @@ try:
     if conf.get('balance_chk'):
         if conf.get('chk_url'):
             balance_chk()
-        exitc(f'ERR: Balance check is unsupported for {conf.get('full_name')}.')
+        exitc(f'ERR: Balance check is unsupported for {conf.get("full_name")}.')
     # print(data_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()

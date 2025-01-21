@@ -218,6 +218,11 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - deepseek-chat
+      - deepseek-reasoner
   - `GLM`：`dict`。配置 ChatGLM 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  

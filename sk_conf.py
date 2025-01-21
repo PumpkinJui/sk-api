@@ -8,7 +8,8 @@ checklt = {
     "tool_use": [True,bool,False],
     "service": [{
         "DSK": [{
-            "KEY": ["",str,True]
+            "KEY": ["",str,True],
+            "model": ["prompt",str,False]
         },dict,False],
         "GLM": [{
             "KEY": ["",str,True],
