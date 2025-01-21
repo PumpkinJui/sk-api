@@ -301,7 +301,8 @@ def ast_nostream() -> None:
         "POST",
         conf.get('cht_url'),
         headers = headers_gen(),
-        data = data_gen()
+        data = data_gen(),
+        timeout = 3.05
     )
     if rsp.status_code == requests.codes.ok:
         if conf.get('model') == 'deepseek-reasoner':
@@ -326,6 +327,7 @@ def ast_stream() -> None:
         conf.get('cht_url'),
         headers = headers_gen(),
         data = data_gen(),
+        timeout = 3.05,
         stream = True
     )
     if rsp.status_code == requests.codes.ok:
@@ -360,7 +362,8 @@ def balance_chk() -> None:
         "GET",
         conf.get('chk_url'),
         headers = headers_gen(False),
-        data = {}
+        data = {},
+        timeout = 3.05
     )
     if rsp.status_code == requests.codes.ok:
         exitc('INF: {} {} left in the {} balance.'.format(
@@ -411,6 +414,8 @@ except SystemExit:
 except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
+except requests.exceptions.ConnectTimeout:
+    print("ERR: Connection timed out.")
 except:
     print()
     print_exc()
