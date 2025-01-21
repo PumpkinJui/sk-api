@@ -101,26 +101,6 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
     return lst[0]
 
 def service_infoget(service:str) -> dict:
-    today = datetime.now(UTC).strftime('%Y-%m-%d')
-    glm_search_prompt = '\n'.join([
-        '','',
-        '## 来自互联网的信息','',
-        '{search_result}','',
-        '## 当前 UTC 日期','',
-        today,'',
-        '「当地时间」和用户所在时区的时间可能有所不同。','',
-        '## 要求','',
-        '根据最新发布的信息回答用户问题。','',
-        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
-        ''
-    ])
-    glm_tools = [{
-        "type": "web_search",
-        "web_search": {
-            "enable": True,
-            "search_prompt": glm_search_prompt
-        }
-    }]
     info = {
         'DSK': {
             'name': 'DSK',
@@ -140,12 +120,12 @@ def service_infoget(service:str) -> dict:
             'chk_url': None,
             'models': (
                 ('glm-zero-preview',None,None),
-                ('glm-4-plus',None,glm_tools),
-                ('glm-4-air-0111',None,glm_tools),
-                ('glm-4-airx',None,glm_tools),
-                ('glm-4-flash',None,glm_tools),
-                ('glm-4-flashx',None,glm_tools),
-                ('glm-4-long',None,glm_tools),
+                ('glm-4-plus',None,glm_tools()),
+                ('glm-4-air-0111',None,glm_tools()),
+                ('glm-4-airx',None,glm_tools()),
+                ('glm-4-flash',None,glm_tools()),
+                ('glm-4-flashx',None,glm_tools()),
+                ('glm-4-long',None,glm_tools()),
                 ('codegeex-4',8192,None),
                 ('charglm-4',4095,None),
                 ('emohaa',None,None)
@@ -154,6 +134,61 @@ def service_infoget(service:str) -> dict:
         }
     }
     return info.get(service)
+
+def glm_tools() -> list:
+    """GLM-dedicated tools generator.
+
+    Return the tools as dict.
+    """
+    today = datetime.now(UTC).strftime('%Y-%m-%d')
+    search_prompt = '\n'.join([
+        '','',
+        '## 来自互联网的信息','',
+        '{search_result}','',
+        '## 当前 UTC 日期','',
+        today,'',
+        '「当地时间」和用户所在时区的时间可能有所不同。','',
+        '## 要求','',
+        '根据最新发布的信息回答用户问题。','',
+        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
+        ''
+    ])
+    tools = [{
+        "type": "web_search",
+        "web_search": {
+            "enable": True,
+            "search_prompt": search_prompt
+        }
+    }]
+    return tools
+
+def emohaa_meta() -> dict:
+    """Emohaa-dedicated meta generator.
+
+    Return the meta as dict.
+    """
+    user_name = input('USER NAME\n')
+    if not user_name:
+        user_name = '用户'
+    print()
+    user_info = input('USER INFO\n')
+    if not user_info:
+        user_info = '用户对心理学不太了解。'
+    print()
+    bot_info = '，'.join([
+        'Emohaa 学习了经典的 Hill 助人理论',
+        '拥有人类心理咨询师的专业话术能力',
+        '具有较强的倾听、情感映射、共情等情绪支持能力',
+        '帮助用户了解自身想法和感受，学习应对情绪问题',
+        '帮助用户实现乐观、积极的心理和情感状态。'
+    ])
+    meta= {
+        "user_name": user_name,
+        "user_info": user_info,
+        "bot_name": "Emohaa",
+        "bot_info": bot_info
+    }
+    return meta
 
 def token_gen() -> str:
     """Generate a jwt token for jwt-supported services.
@@ -320,47 +355,6 @@ def ast_stream() -> None:
             json.loads(rsp.text)['error']['message']
         ))
 
-def emohaa_meta() -> dict:
-    """Emohaa-dedicated meta generator.
-
-    Return the meta as dict.
-    """
-    user_name = input('USER NAME\n')
-    if not user_name:
-        user_name = '用户'
-    print()
-    user_info = input('USER INFO\n')
-    if not user_info:
-        user_info = '用户对心理学不太了解。'
-    print()
-    bot_info = '，'.join([
-        'Emohaa 学习了经典的 Hill 助人理论',
-        '拥有人类心理咨询师的专业话术能力',
-        '具有较强的倾听、情感映射、共情等情绪支持能力',
-        '帮助用户了解自身想法和感受，学习应对情绪问题',
-        '帮助用户实现乐观、积极的心理和情感状态。'
-    ])
-    meta= {
-        "user_name": user_name,
-        "user_info": user_info,
-        "bot_name": "Emohaa",
-        "bot_info": bot_info
-    }
-    return meta
-
-def site_models() -> None:
-    """Carry everything specifically for some model.
-
-    Some models have annoying features that the general one cannot handle.
-    Make them into functions and land them here,
-    so they will appear after SYSTEM if input is needed.
-    Typically, conf should be modified to implement any changes.
-
-    No return provided.
-    """
-    if conf.get('model') == 'emohaa':
-        conf['meta'] = emohaa_meta()
-
 def balance_chk() -> None:
     rsp = requests.request(
         "GET",
@@ -388,7 +382,8 @@ def chat() -> None:
         sys = 'You are a helpful assistant.'
     conf['msg'].append({'role': 'system', 'content': sys})
     print()
-    site_models()
+    if conf.get('model') == 'emohaa':
+        conf['meta'] = emohaa_meta()
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
