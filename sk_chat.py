@@ -1,12 +1,46 @@
-from datetime import datetime,UTC
-import json
-from traceback import print_exc
-import requests
-from jwt import encode
-from sk_conf import confGet
+"""The main functional system.
+
+1. Read the conf.
+2. If balance check is requested
+   and the desired service supports it,
+   run it and exit.
+   If not, print an error message.
+3. Run chat().
+
+Can handle any of the following exceptions:
+
+- SystemExit
+  Normally requested by exitc() as a halfway exit.
+- KeyboardInterrupt
+  Ctrl+C exit requested by the user.
+- requests.exceptions.Timeout
+  ConnectTimeout or ReadTimeout, as a network issue.
+
+Other exceptions will be printed for debugging.
+
+No return provided.
+The main code is at the bottom.
+"""
+# The documentation system structure:
+# SUMMARY
+# (blank)
+# Running steps
+# (blank)
+# Exceptions
+# (blank)
+# Returns
+
+from datetime import datetime,UTC # provide date to LLMs
+import json # decode and encode
+from traceback import print_exc # unexpected exceptions handling
+import requests # GET and POST to servers
+from jwt import encode # pass API KEY safely to supported services
+from sk_conf import confGet # read conf
 
 def exitc(reason:str='') -> None:
-    """Raise SystemExit and give a reason.
+    """Halfway exit.
+
+    Give a reason and raise SystemExit.
 
     No return provided.
     """
@@ -254,7 +288,6 @@ def temp_get() -> float:
     If temp is out of range,
     give an error message and some tips, and try again.
 
-    Won't run if `deepseek-reasoner` is in use.
     Return the temp x.xx as float.
     """
     while True:
@@ -273,8 +306,7 @@ def temp_get() -> float:
             print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
             print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
 
-def usr_get() -> dict:
-    print(f'USER #{conf.get("rnd")}')
+def lines_get() -> list:
     lines = []
     nul_count = 0
     while True:
@@ -291,6 +323,20 @@ def usr_get() -> dict:
             if line == '':
                 break
         lines.append(line)
+    return lines
+
+def system_get() -> dict:
+    print('SYSTEM')
+    lines = lines_get()
+    if not lines:
+        sys = 'You are a helpful assistant.'
+    else:
+        sys = '\n'.join(lines)
+    return {'role': 'system', 'content': sys}
+
+def usr_get() -> dict:
+    print(f'USER #{conf.get("rnd")}')
+    lines = lines_get()
     if not lines:
         exitc('INF: Null input, chat ended.')
     usr = '\n'.join(lines)
@@ -302,9 +348,9 @@ def ast_nostream() -> None:
         conf.get('cht_url'),
         headers = headers_gen(),
         data = data_gen(),
-        timeout = 3.05
+        timeout = (3.05,9.05)
     )
-    if rsp.status_code == requests.codes.ok:
+    if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         if conf.get('model') == 'deepseek-reasoner':
             print(json.loads(rsp.text)['choices'][0]['message']['reasoning_content'])
             print()
@@ -327,10 +373,10 @@ def ast_stream() -> None:
         conf.get('cht_url'),
         headers = headers_gen(),
         data = data_gen(),
-        timeout = 3.05,
+        timeout = (3.05,9.05),
         stream = True
     )
-    if rsp.status_code == requests.codes.ok:
+    if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         for line in rsp.iter_lines():
             if line:
                 data = line.decode('utf-8')[len('data:'):].strip()
@@ -363,9 +409,9 @@ def balance_chk() -> None:
         conf.get('chk_url'),
         headers = headers_gen(False),
         data = {},
-        timeout = 3.05
+        timeout = (3.05,9.05)
     )
-    if rsp.status_code == requests.codes.ok:
+    if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         exitc('INF: {} {} left in the {} balance.'.format(
             json.loads(rsp.text)['balance_infos'][0]['total_balance'],
             json.loads(rsp.text)['balance_infos'][0]['currency'],
@@ -380,11 +426,7 @@ def balance_chk() -> None:
 def chat() -> None:
     if conf.get('model') != 'deepseek-reasoner':
         conf['temp'] = temp_get()
-    sys = input('SYSTEM\n')
-    if sys == '':
-        sys = 'You are a helpful assistant.'
-    conf['msg'].append({'role': 'system', 'content': sys})
-    print()
+    conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
         conf['meta'] = emohaa_meta()
     while True:
@@ -414,8 +456,8 @@ except SystemExit:
 except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
-except requests.exceptions.ConnectTimeout:
-    print("ERR: Connection timed out.")
+except requests.exceptions.Timeout:
+    print("ERR: The request timed out.")
 except:
     print()
     print_exc()

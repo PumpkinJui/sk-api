@@ -210,8 +210,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   选填项，默认为 `true`。
 - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额，输出后自动退出；`false` 进行对话。  
   选填项，默认为 `false`。
-- `long_prompt`：`bool`。设定为 `true` 时，需要两个空行 (三次回车) 才能触发回复；`false` 仅需一个空行 (两次回车)。  
-  适用于粘贴大段中间有空行的内容。系统提示词始终为单行输入，不受此影响。  
+- `long_prompt`：`bool`。设定为 `true` 时，需要两个空行 (三次回车) 才能触发下一步；`false` 仅需一个空行 (两次回车)。  
+  适用于粘贴大段中间有空行的内容。影响系统提示词和用户提示词。  
   选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
   选填项，默认为 `true`。
@@ -313,110 +313,6 @@ key: [value,vtype,required]
 
 如果该文件存在并合 JSON 语法，检查所有配置项，将合法配置合并进默认配置，并返回合并后的配置。
 
-</details>
-
-### sk_chat.py
-
-<details>
-
-对话主脚本。
-
-#### `exitc(reason:str='') -> None`
-
-输出 `reason` 并抛出 `SystemExit`。这将导致剩余所有部分不再执行，等待用户确认退出。没有返回值。
-
-#### `conf_read() -> dict`
-
-#### `service_model(keyword:str,lt:tuple,lower:bool=True,sts:str='prompt') -> str`
-
-#### `service_infoget(service:str) -> dict`
-
-#### `token_gen() -> str`
-
-#### `headers_gen(contype:bool=True) -> dict`
-
-根据使用场景 (`contype` 在 `balance_chk` 场景为 `False`)，生成请求 headers 并返回。
-
-#### `data_gen(msg:list,temp:float,stream:bool) -> str`
-
-根据各参数值，生成 JSON 格式的请求信息并返回。
-
-#### `temp_get() -> float`
-
-#### `usr_get(rnd:int) -> dict`
-
-输出 `User #rnd`，并获取用户的多行输入。
-
-用户可以输入多行连续的内容。当输入空行 (连续敲两次回车) 时：
-
-- 如果已经有了输入内容，将所有内容使用 `\n` 拼接在一起，以 `messages` 格式返回。
-- 如果没有输入内容，因 `Null input; chat ended.` 调用 `exitc(reason)`。
-
-#### `ast_nostream(msg:list,temp:float) -> None`
-
-在 `stream` 为 `False` 时执行的部分。
-
-根据各参数值，使用 `requests` 库进行非流式传输请求。
-
-如果请求成功 (HTTP-200)，提取返回内容中的生成文本，输出并以 `messages` 格式添加到 `msg` 中。
-
-如果请求失败，因 `status_code message` 调用 `exitc(reason)`。
-
-没有返回值。
-
-#### `ast_stream(msg:list,temp:float) -> None`
-
-在 `stream` 为 `True` 时执行的内容。
-
-根据各参数值，使用 `requests` 库进行流式传输请求。
-
-如果请求成功 (HTTP-200)，不断提取返回内容中的新生成文本并输出；全部传输完毕后，将整段生成文本以 `messages` 格式添加到 `msg` 中。
-
-如果请求失败，因 `status_code message` 调用 `exitc(reason)`。
-
-没有返回值。
-
-#### `emohaa_meta() -> dict`
-
-#### `site_models() -> None`
-
-#### `balance_chk() -> None`
-
-使用 `requests` 库，向远程服务器 `url` 发送请求，查询指定 KEY 对应账户的余额。
-
-如果查询成功 (HTTP-200)，因 `INF: total_balance currency left in the DeepSeek balance.` (类似于 `1.23 CNY`) 调用 `exitc(reason)`。
-
-如果查询失败，因 `status_code message` 调用 `exitc(reason)`。
-
-#### ` chat() -> None`
-
-首先，获取 `Temperature`，并在其不合法时，反复提示正确格式并重新获取输入；此处为空将使用默认的 `1.0`。
-
-然后，获取 `System Prompt`，并将其以 `messages` 格式添加到 `msg` 中；此处为空将使用默认的 `You are a helpful assistant.`
-
-之后，使用之前的多个函数，进行多轮对话。
-
-没有返回值。
-
-#### main
-
-整体上是一个大型的 `try-except-finally` 结构，用于在停止执行后等待用户确认退出。
-
-首先，获取配置或生成配置。
-
-然后，在 `balance_chk` 为 `True` 时进行余额查询：如果指定服务不支持余额查询，则退出。
-
-之后，进行对话。
-
-如果触发了 `SystemExit`，直接转至 `finally` 块，等待用户确认退出。
-
-如果触发了 `KeyboardInterrupt`，输出 `Aborted.`。
-
-如果触发了其他异常，输出 `Traceback` 错误信息。
-
-在任何情况下，最后都会提示用户按回车退出，以等待用户查看信息并确认退出。
-
-</details>
 </details>
 
 ## TODO
