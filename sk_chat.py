@@ -174,14 +174,10 @@ def glm_tools() -> list:
 
     Return the tools as dict.
     """
-    today = datetime.now(UTC).strftime('%Y-%m-%d')
     search_prompt = '\n'.join([
         '','',
         '## 来自互联网的信息','',
         '{search_result}','',
-        '## 当前 UTC 日期','',
-        today,'',
-        '「当地时间」和用户所在时区的时间可能有所不同。','',
         '## 要求','',
         '根据最新发布的信息回答用户问题。','',
         '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
@@ -329,7 +325,9 @@ def system_get() -> dict:
     print('SYSTEM')
     lines = lines_get()
     if not lines:
-        sys = 'You are a helpful assistant.'
+        sys = 'You are a helpful assistant. Now it is {} in UTC.'.format(
+            datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        )
     else:
         sys = '\n'.join(lines)
     return {'role': 'system', 'content': sys}
