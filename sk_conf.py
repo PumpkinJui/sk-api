@@ -3,7 +3,7 @@ from json.decoder import JSONDecodeError
 
 checklt = {
     "stream": [True,bool,False],
-    "balance_chk": [False,bool,False],
+    "balance_chk": [True,bool,False],
     "long_prompt": [False,bool,False],
     "tool_use": [True,bool,False],
     "service": [{

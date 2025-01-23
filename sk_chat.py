@@ -60,25 +60,24 @@ def conf_read() -> dict:
     service_conf = confR['service'].get(service_name)
     del confR['service']
     confR.update(service_conf)
-    if not confR.get('balance_chk'):
-        if service_conf.get('model'):
-            model_info = service_model(
-                'model',
-                service_info.get('models'),
-                True,
-                service_conf.get('model')
-            )
-        else:
-            model_info = service_model(
-                'model',
-                service_info.get('models'),
-                True
-            )
-        confR['model'] = model_info[0]
-        confR['max_tokens'] = model_info[1]
-        confR['tools'] = model_info[2]
-        confR['msg'] = []
-        confR['rnd'] = 0
+    if service_conf.get('model'):
+        model_info = service_model(
+            'model',
+            service_info.get('models'),
+            True,
+            service_conf.get('model')
+        )
+    else:
+        model_info = service_model(
+            'model',
+            service_info.get('models'),
+            True
+        )
+    confR['model'] = model_info[0]
+    confR['max_tokens'] = model_info[1]
+    confR['tools'] = model_info[2]
+    confR['msg'] = []
+    confR['rnd'] = 0
     confR.update(service_info)
     del confR['models']
     # print(confR)
@@ -135,6 +134,7 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
     return lst[0]
 
 def service_infoget(service:str) -> dict:
+    glm_tools = glm_tools_gen()
     info = {
         'DSK': {
             'name': 'DSK',
@@ -154,12 +154,12 @@ def service_infoget(service:str) -> dict:
             'chk_url': None,
             'models': (
                 ('glm-zero-preview',None,None),
-                ('glm-4-plus',None,glm_tools()),
-                ('glm-4-air-0111',None,glm_tools()),
-                ('glm-4-airx',None,glm_tools()),
-                ('glm-4-flash',None,glm_tools()),
-                ('glm-4-flashx',None,glm_tools()),
-                ('glm-4-long',None,glm_tools()),
+                ('glm-4-plus',None,glm_tools),
+                ('glm-4-air-0111',None,glm_tools),
+                ('glm-4-airx',None,glm_tools),
+                ('glm-4-flash',None,glm_tools),
+                ('glm-4-flashx',None,glm_tools),
+                ('glm-4-long',None,glm_tools),
                 ('codegeex-4',8192,None),
                 ('charglm-4',4095,None),
                 ('emohaa',None,None)
@@ -169,7 +169,7 @@ def service_infoget(service:str) -> dict:
     }
     return info.get(service)
 
-def glm_tools() -> list:
+def glm_tools_gen() -> list:
     """GLM-dedicated tools generator.
 
     Return the tools as dict.
@@ -192,7 +192,7 @@ def glm_tools() -> list:
     }]
     return tools
 
-def emohaa_meta() -> dict:
+def emohaa_meta_gen() -> dict:
     """Emohaa-dedicated meta generator.
 
     Return the meta as dict.
@@ -201,10 +201,12 @@ def emohaa_meta() -> dict:
     if not user_name:
         user_name = '用户'
     print()
-    user_info = input('USER INFO\n')
-    if not user_info:
+    print('USER INFO')
+    lines = lines_get()
+    if not lines:
         user_info = '用户对心理学不太了解。'
-    print()
+    else:
+        user_info = '\n'.join(lines)
     bot_info = '，'.join([
         'Emohaa 学习了经典的 Hill 助人理论',
         '拥有人类心理咨询师的专业话术能力',
@@ -410,11 +412,11 @@ def balance_chk() -> None:
         timeout = (3.05,9.05)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        exitc('INF: {} {} left in the {} balance.'.format(
+        return 'INF: {} {} left in the {} balance.'.format(
             json.loads(rsp.text)['balance_infos'][0]['total_balance'],
             json.loads(rsp.text)['balance_infos'][0]['currency'],
             conf.get('full_name')
-        ))
+        )
     else:
         exitc('ERR: {} {}'.format(
             rsp.status_code,
@@ -426,7 +428,7 @@ def chat() -> None:
         conf['temp'] = temp_get()
     conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
-        conf['meta'] = emohaa_meta()
+        conf['meta'] = emohaa_meta_gen()
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
@@ -444,8 +446,10 @@ try:
     print()
     if conf.get('balance_chk'):
         if conf.get('chk_url'):
-            balance_chk()
-        exitc(f'ERR: Balance check is unsupported for {conf.get("full_name")}.')
+            print(balance_chk())
+        else:
+            print(f'WRN: Balance check is unsupported for {conf.get("full_name")}.')
+    print()
     # print(data_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()
