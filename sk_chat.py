@@ -49,17 +49,19 @@ def exitc(reason:str='') -> None:
     raise SystemExit
 
 def conf_read() -> dict:
-    confR = confGet('sk.json')
-    if not confR:
-        with open('sk.json','a'):
+    conf_r = confGet('sk.json')
+    if not conf_r:
+        with open('sk.json','a'): # pylint: disable=unspecified-encoding
             pass
         exitc('TIP: Please check your conf file.')
-    service_list = tuple(confR.get('service').keys())
+    print()
+    service_list = tuple(conf_r.get('service').keys())
     service_name = service_model('service',service_list,False)
     service_info = service_infoget(service_name)
-    service_conf = confR['service'].get(service_name)
-    del confR['service']
-    confR.update(service_conf)
+    service_conf = conf_r['service'].get(service_name)
+    del conf_r['service']
+    conf_r.update(service_conf)
+    print()
     if service_conf.get('model'):
         model_info = service_model(
             'model',
@@ -73,22 +75,19 @@ def conf_read() -> dict:
             service_info.get('models'),
             True
         )
-    confR['model'] = model_info[0]
-    confR['max_tokens'] = model_info[1]
-    confR['tools'] = model_info[2]
-    confR['msg'] = []
-    confR['rnd'] = 0
-    confR.update(service_info)
-    del confR['models']
-    # print(confR)
-    return confR
+    conf_r['model'] = model_info[0]
+    conf_r['max_tokens'] = model_info[1]
+    conf_r['tools'] = model_info[2]
+    conf_r['msg'] = []
+    conf_r['rnd'] = 0
+    conf_r.update(service_info)
+    del conf_r['models']
+    # print(conf_r)
+    return conf_r
 
 def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
     if isinstance(lst[0],tuple):
-        lt = []
-        for i in lst:
-            lt.append(i[0])
-        lt = tuple(lt)
+        lt = tuple(i[0] for i in lst)
     else:
         lt = lst
     if sts != 'prompt' and sts not in lt:
@@ -101,24 +100,10 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
         print('INF: Select one from below by name.')
         print('TIP: Case insensitive.')
         print('TIP: Fragments accepted; guessed by order.')
-        k = 0
-        max_len = 0
-        for i in lt:
-            max_len = max(max_len,len(i))
-        while k < len(lt):
-            if k % 2 == 0:
-                print('INF:',lt[k].ljust(max_len),end='\t')
-                k += 1
-            else:
-                print(lt[k])
-                k += 1
-        if k % 2 == 1:
-            print()
+        info_print(lt)
         while True:
-            if lower:
-                chn = input('REQ: ').lower()
-            else:
-                chn = input('REQ: ').upper()
+            chn = input('REQ: ')
+            chn = chn.lower() if lower else chn.upper()
             if not chn:
                 pass
             elif chn in lt:
@@ -126,12 +111,44 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
                 return lst[lt.index(chn)]
             else:
                 for m,n in enumerate(lt):
-                    if chn in n:
-                        print(f'INF: Selection guessed: {n}. Accepted.')
+                    if keyword == 'service' and sel_guess(chn,n,False):
+                        return lst[m]
+                    if keyword == 'model' and sel_guess(chn,n,True):
                         return lst[m]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     return lst[0]
+
+def info_print(lt:list) -> None:
+    k = 0
+    max_len = 0
+    for i in lt:
+        max_len = max(max_len,len(i))
+    while k < len(lt):
+        if k % 2 == 0:
+            print('INF:',lt[k].ljust(max_len),end='\t')
+            k += 1
+        else:
+            print(lt[k])
+            k += 1
+    if k % 2 == 1:
+        print()
+
+def sel_guess(chn:str,sel:str,stripping:bool) -> bool:
+    if stripping and '-' in sel:
+        selp = sel.lstrip('depskglm')
+        if selp[0] == '-':
+            selp = selp[1:]
+    else:
+        selp = sel
+    # print(selp)
+    if chn.strip() == selp:
+        print(f'INF: Selection accepted: {sel}.')
+        return True
+    if chn.strip() in selp:
+        print(f'INF: Selection guessed: {sel}. Accepted.')
+        return True
+    return False
 
 def service_infoget(service:str) -> dict:
     glm_tools = glm_tools_gen()
@@ -236,19 +253,19 @@ def token_gen() -> str:
     """
     if not conf.get('jwt'):
         return conf.get('KEY')
-    KEYs = conf.get('KEY').split(".")
-    if len(KEYs) == 3:
+    ksp = conf.get('KEY').split(".")
+    if len(ksp) == 3:
         return conf.get('KEY')
-    if len(KEYs) != 2:
+    if len(ksp) != 2:
         exitc('ERR: Invalid KEY.')
     payload = {
-        "api_key": KEYs[0],
+        "api_key": ksp[0],
         "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 30 * 1000,
         "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
     }
     return encode(
         payload,
-        KEYs[1],
+        ksp[1],
         algorithm="HS256",
         headers={"alg": "HS256", "sign_type": "SIGN"},
     )
@@ -296,10 +313,10 @@ def temp_get() -> float:
                 return conf.get('temp_range')[1]
             temp = round(float(temp),2)
             if not 0 <= temp <= conf.get('temp_range')[0]:
-                raise
+                raise ValueError
             print()
             return temp
-        except:
+        except ValueError:
             print('ERR: Temperature invalid.')
             print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
             print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
@@ -327,11 +344,10 @@ def system_get() -> dict:
     print('SYSTEM')
     lines = lines_get()
     if not lines:
-        sys = 'You are a helpful assistant. Now it is {} in UTC.'.format(
-            datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        )
+        sys = 'You are a helpful assistant.'
     else:
         sys = '\n'.join(lines)
+    sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
@@ -360,6 +376,7 @@ def ast_nostream() -> None:
         conf['msg'].append({'role': 'assistant', 'content': ast})
         print()
     else:
+        # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
@@ -398,12 +415,14 @@ def ast_stream() -> None:
         print()
         print()
     else:
+        # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
         ))
 
-def balance_chk() -> None:
+# pylint: disable-next=inconsistent-return-statements
+def balance_chk() -> str:
     rsp = requests.request(
         "GET",
         conf.get('chk_url'),
@@ -412,16 +431,17 @@ def balance_chk() -> None:
         timeout = (3.05,9.05)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
+        # pylint: disable-next=consider-using-f-string
         return 'INF: {} {} left in the {} balance.'.format(
             json.loads(rsp.text)['balance_infos'][0]['total_balance'],
             json.loads(rsp.text)['balance_infos'][0]['currency'],
             conf.get('full_name')
         )
-    else:
-        exitc('ERR: {} {}'.format(
-            rsp.status_code,
-            json.loads(rsp.text)['error']['message']
-        ))
+    # pylint: disable-next=consider-using-f-string
+    exitc('ERR: {} {}'.format(
+        rsp.status_code,
+        json.loads(rsp.text)['error']['message']
+    ))
 
 def chat() -> None:
     if conf.get('model') != 'deepseek-reasoner':
@@ -453,14 +473,13 @@ try:
     # print(data_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()
-except SystemExit:
-    pass
 except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
 except requests.exceptions.Timeout:
     print("ERR: The request timed out.")
-except:
+# pylint: disable-next=broad-exception-caught
+except Exception:
     print()
     print_exc()
     print()

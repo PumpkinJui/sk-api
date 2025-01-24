@@ -1,1 +1,1 @@
-pylint -j 8 --output-format parseable sk_conf.py sk_chat.py
+pylint --enable useless-suppression -j 8 --output-format parseable sk_conf.py sk_chat.py
