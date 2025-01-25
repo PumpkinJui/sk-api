@@ -1,3 +1,5 @@
 __pycache__/
+_test/
 *.bak
 sk.json
+CHANGELOG.md
