@@ -1,11 +1,12 @@
 # sk-api
 
 ![Create At: 2025-01-09.](https://img.shields.io/github/created-at/PumpkinJui/sk-api?style=for-the-badge&logo=github&logoColor=white&color=477DB2)
-[![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&logo=creativecommons&logoColor=white&color=477DB2)](LICENSE)
-![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=gitbook&logoColor=white&color=477DB2)
+[![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
+![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=python&logoColor=white&color=477DB2)
 
 [![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
 ![Last Commit: When was the last commit made.](https://img.shields.io/github/last-commit/PumpkinJui/sk-api?display_timestamp=author&style=for-the-badge&color=yellow)
+![GitHub Branch Check Runs: Building status.](https://img.shields.io/github/check-runs/PumpkinJui/sk-api/main?style=for-the-badge)
 
 通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
@@ -152,7 +153,9 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 ~~**暂时没有计划**。Pyinstaller 决定了我只能有什么系统打包什么系统，而我只用 Windows 和 Termux；而 Termux 的 Python 版本 (或者兼容机制) 把我背刺了，装不上 Pyinstaller，就干脆打包不了了。我自己用的都是源码执行。~~
 
-后续考虑 GitHub Actions。
+已使用 GitHub Actions 实现。如果您需要在其他系统上运行此程序，请提交 issues。
+
+但 Termux 仍暂不支持；请使用源码执行。
 
 </details>
 
@@ -293,7 +296,6 @@ key: [value,vtype,required]
 - [ ] 将 README 中的函数介绍内嵌
 - [ ] 截断自动继续
 - [ ] Command-Line Switch
-- [ ] GitHub Actions 自动打包
 - [ ] 【高难】适配 `glm-4-alltools`
 - [ ] 【高难】多模型对比
 
