@@ -144,23 +144,25 @@ def sel_guess(chn:str,sel:str,stripping:bool) -> bool:
 
 def service_infoget(service:str) -> dict:
     glm_tools = glm_tools_gen()
+    kimi_tools = kimi_tools_gen()
     info = {
         'DSK': {
             'name': 'DSK',
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
+            'temp_range': (2,1.00),
             'models': (
                 ('deepseek-chat',8192,None),
                 ('deepseek-reasoner',8192,None)
-            ),
-            'temp_range': (2,1.00)
+            )
         },
         'GLM': {
             'name': 'GLM',
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
             'chk_url': None,
+            'temp_range': (1,0.95),
             'models': (
                 ('glm-zero-preview',None,None),
                 ('glm-4-plus',None,glm_tools),
@@ -172,8 +174,20 @@ def service_infoget(service:str) -> dict:
                 ('codegeex-4',8192,None),
                 ('charglm-4',4095,None),
                 ('emohaa',None,None)
-            ),
-            'temp_range': (1,0.95)
+            )
+        },
+        'KIMI': {
+            'name': 'KIMI',
+            'full_name': 'Kimi',
+            'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
+            'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
+            'temp_range': (1,0.30),
+            'models': (
+                ('moonshot-v1-auto',None,kimi_tools),
+                ('moonshot-v1-8k',None,kimi_tools),
+                ('moonshot-v1-32k',None,kimi_tools),
+                ('moonshot-v1-128k',None,kimi_tools),
+            )
         }
     }
     return info.get(service)
@@ -200,6 +214,16 @@ def glm_tools_gen() -> list:
         "web_search": {
             "enable": True,
             "search_prompt": search_prompt
+        }
+    }]
+    return tools
+
+def kimi_tools_gen() -> list:
+    return None
+    tools = [{
+        "type": "builtin_function",
+        "function": {
+            "name": "$web_search",
         }
     }]
     return tools
@@ -407,8 +431,9 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
-                json_data = json.loads(data)
-                delta = json_data.get('choices')[0].get('delta').get('content')
+                if not (delta_list := json.loads(data).get('choices')[0].get('delta')):
+                    continue
+                delta = delta_list.get('content')
                 if delta or delta == '':
                     ast += delta
                     if not gocon:
@@ -416,7 +441,7 @@ def ast_stream() -> None:
                         print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
                         gocon = True
                 else:
-                    delta = json_data.get('choices')[0].get('delta').get('reasoning_content')
+                    delta = delta_list.get('reasoning_content')
                     gocon = False
                 print(delta,end='',flush=True)
         conf['msg'].append({'role': 'assistant', 'content': ast})
@@ -438,17 +463,25 @@ def balance_chk() -> str:
         data = {},
         timeout = (3.05,9.05)
     )
+    text = json.loads(rsp.text)
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        # pylint: disable-next=consider-using-f-string
-        return 'INF: {} {} left in the {} balance.'.format(
-            json.loads(rsp.text)['balance_infos'][0]['total_balance'],
-            json.loads(rsp.text)['balance_infos'][0]['currency'],
-            conf.get('full_name')
-        )
+        if conf.get('name') == 'DSK':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} {} left in the {} balance.'.format(
+                text['balance_infos'][0]['total_balance'],
+                text['balance_infos'][0]['currency'],
+                conf.get('full_name')
+            )
+        if conf.get('name') == 'KIMI':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} CNY left in the {} balance.'.format(
+                text['data']['available_balance'],
+                conf.get('full_name')
+            )
     # pylint: disable-next=consider-using-f-string
     exitc('ERR: {} {}'.format(
         rsp.status_code,
-        json.loads(rsp.text)['error']['message']
+        text['error']['message']
     ))
 
 def chat() -> None:

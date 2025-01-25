@@ -15,6 +15,10 @@ checklt = {
             "KEY": ["",str,True],
             "model": ["prompt",str,False],
             "jwt": [True,bool,False]
+        },dict,False],
+        "KIMI": [{
+            "KEY": ["",str,True],
+            "model": ["moonshot-v1-auto",str,False]
         },dict,False]
     },dict,True]
 }

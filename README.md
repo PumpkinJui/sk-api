@@ -200,6 +200,15 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - emohaa
     - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密 (即使用鉴权 token 进行鉴权)。  
       选填项，默认为 `True`。这不影响直接传入鉴权 token。
+  - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `moonshot-v1-auto`。可选项包括：
+      - prompt
+      - moonshot-v1-auto
+      - moonshot-v1-8k
+      - moonshot-v1-32k
+      - moonshot-v1-128k
 
 </details>
 
