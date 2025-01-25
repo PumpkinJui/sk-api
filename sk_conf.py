@@ -88,7 +88,7 @@ def KEYcheck(confK:dict) -> dict: # specific
 
 def confGet(confFile:str) -> dict:
     try:
-        with open(confFile,'r') as confF:
+        with open(confFile,'r',encoding='utf-8') as confF:
             confG = load(confF)
         print('INF: Configurations read!')
     except FileNotFoundError:

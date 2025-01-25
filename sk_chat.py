@@ -51,7 +51,7 @@ def exitc(reason:str='') -> None:
 def conf_read() -> dict:
     conf_r = confGet('sk.json')
     if not conf_r:
-        with open('sk.json','a'): # pylint: disable=unspecified-encoding
+        with open('sk.json','a',encoding='utf-8'):
             pass
         exitc('TIP: Please check your conf file.')
     print()
@@ -86,10 +86,7 @@ def conf_read() -> dict:
     return conf_r
 
 def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
-    if isinstance(lst[0],tuple):
-        lt = tuple(i[0] for i in lst)
-    else:
-        lt = lst
+    lt = tuple(i[0] for i in lst) if isinstance(lst[0],tuple) else lst
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: {sts} is not a valid {keyword}.')
     if sts != 'prompt' and sts in lt:
@@ -111,9 +108,8 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
                 return lst[lt.index(chn)]
             else:
                 for m,n in enumerate(lt):
-                    if keyword == 'service' and sel_guess(chn,n,False):
-                        return lst[m]
-                    if keyword == 'model' and sel_guess(chn,n,True):
+                    if keyword == 'service' and sel_guess(chn,n,False) or \
+                       keyword ==  'model'  and sel_guess(chn,n,True):
                         return lst[m]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
@@ -121,16 +117,11 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
 
 def info_print(lt:list) -> None:
     k = 0
-    max_len = 0
-    for i in lt:
-        max_len = max(max_len,len(i))
+    max_len = max(len(i) for i in lt)
     while k < len(lt):
-        if k % 2 == 0:
-            print('INF:',lt[k].ljust(max_len),end='\t')
-            k += 1
-        else:
-            print(lt[k])
-            k += 1
+        # pylint: disable-next=expression-not-assigned
+        print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
+        k += 1
     if k % 2 == 1:
         print()
 
@@ -220,10 +211,7 @@ def emohaa_meta_gen() -> dict:
     print()
     print('USER INFO')
     lines = lines_get()
-    if not lines:
-        user_info = '用户对心理学不太了解。'
-    else:
-        user_info = '\n'.join(lines)
+    user_info = '\n'.join(lines) if lines else '用户对心理学不太了解。'
     bot_info = '，'.join([
         'Emohaa 学习了经典的 Hill 助人理论',
         '拥有人类心理咨询师的专业话术能力',
@@ -343,10 +331,7 @@ def lines_get() -> list:
 def system_get() -> dict:
     print('SYSTEM')
     lines = lines_get()
-    if not lines:
-        sys = 'You are a helpful assistant.'
-    else:
-        sys = '\n'.join(lines)
+    sys = '\n'.join(lines) if lines else 'You are a helpful assistant.'
     sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
@@ -452,23 +437,21 @@ def chat() -> None:
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
-        if conf.get('model') != 'deepseek-reasoner':
-            print(f'ASSISTANT #{conf.get("rnd")}')
-        else:
-            print(f'ASSISTANT REASONING #{conf.get("rnd")}')
-        if not conf.get('stream'):
-            ast_nostream()
-        else:
-            ast_stream()
+        print(
+            f'ASSISTANT #{conf.get("rnd")}' if conf.get('model') != 'deepseek-reasoner'
+            else f'ASSISTANT REASONING #{conf.get("rnd")}'
+        )
+        # pylint: disable-next=expression-not-assigned
+        ast_stream() if conf.get('stream') else ast_nostream()
 
 try:
     conf = conf_read()
     print()
     if conf.get('balance_chk'):
-        if conf.get('chk_url'):
-            print(balance_chk())
-        else:
-            print(f'WRN: Balance check is unsupported for {conf.get("full_name")}.')
+        print(
+            balance_chk() if conf.get('chk_url')
+            else f'WRN: Balance check is unsupported for {conf.get("full_name")}.'
+        )
     print()
     # print(data_gen([],0,False))
     # exitc('INF: Debug Exit.')
