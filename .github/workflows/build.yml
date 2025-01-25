@@ -1,0 +1,76 @@
+---
+name: PyInstaller Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: null
+
+jobs:
+
+  build-windows:
+    strategy:
+      matrix:
+        architecture:
+          - x86
+          - x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.8 (${{ matrix.architecture }})
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          architecture: ${{ matrix.architecture }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build Windows executable
+        run: >
+          pyinstaller --clean --onefile --version-file file_version_info.txt -n
+          sk-api-${{ matrix.architecture }} sk_chat.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sk-api-windows-${{ matrix.architecture }}
+          path: dist/sk-api-${{ matrix.architecture }}.exe
+
+  build-termux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Build for Termux
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/arm64
+          target: export
+          outputs: type=local,dest=./dist
+
+      - name: Debug directory structure
+        run: |
+          find ./dist -type f
+          ls -lRh ./dist
+
+      - name: Fix path structure
+        run: |
+          mkdir -p dist/final
+          find ./dist -name sk-api -exec mv {} dist/final/ \;
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sk-api-termux
+          path: dist/final/sk-api
