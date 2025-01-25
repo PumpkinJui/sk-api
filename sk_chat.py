@@ -1,46 +1,47 @@
 """The main functional system.
 
-1. Read the conf.
+1. Read `conf`.
 2. If balance check is requested
-   and the desired service supports it,
-   run it and exit.
-   If not, print an error message.
-3. Run chat().
+   and the desired service supports it, run it.
+   If not, print an warning message.
+3. Run `chat()`.
 
 Can handle any of the following exceptions:
 
-- SystemExit
-  Normally requested by exitc() as a halfway exit.
-- KeyboardInterrupt
+- `SystemExit`
+  Normally requested by `exitc()` as a halfway exit.
+- `KeyboardInterrupt`
   Ctrl+C exit requested by the user.
-- requests.exceptions.Timeout
-  ConnectTimeout or ReadTimeout, as a network issue.
+- `requests.exceptions.Timeout`
+  `ConnectTimeout` or `ReadTimeout`, as a network issue.
 
 Other exceptions will be printed for debugging.
 
-No return provided.
 The main code is at the bottom.
+
+
+The documentation system structure:
+
+- SUMMARY
+* {blank}
+- Running Steps
+* {blank}
+- Expected Exceptions
+* {blank}
+- Returns
 """
-# The documentation system structure:
-# SUMMARY
-# (blank)
-# Running steps
-# (blank)
-# Exceptions
-# (blank)
-# Returns
 
 from datetime import datetime,UTC # provide date to LLMs
 import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
 from jwt import encode # pass API KEY safely to supported services
-from sk_conf import confGet # read conf
+from sk_conf import confGet # read `conf`
 
 def exitc(reason:str='') -> None:
     """Halfway exit.
 
-    Give a reason and raise SystemExit.
+    Give a reason and raise `SystemExit`.
 
     No return provided.
     """
@@ -180,7 +181,10 @@ def service_infoget(service:str) -> dict:
 def glm_tools_gen() -> list:
     """GLM-dedicated tools generator.
 
-    Return the tools as dict.
+    1. Generate `search-prompt`.
+    2. Generate `tools`.
+
+    Return `tools` as dict. Dead return.
     """
     search_prompt = '\n'.join([
         '','',
@@ -203,15 +207,19 @@ def glm_tools_gen() -> list:
 def emohaa_meta_gen() -> dict:
     """Emohaa-dedicated meta generator.
 
-    Return the meta as dict.
+    1. Get `user_name` in single line mode.
+    2. Get `user_info` in multiple line mode.
+    3. Generate `bot_info`.
+    4. Generate `meta`.
+
+    Return `meta` as dict. Input requested.
     """
     user_name = input('USER NAME\n')
     if not user_name:
         user_name = '用户'
     print()
     print('USER INFO')
-    lines = lines_get()
-    user_info = '\n'.join(lines) if lines else '用户对心理学不太了解。'
+    user_info = lines_get() or '用户对心理学不太了解。'
     bot_info = '，'.join([
         'Emohaa 学习了经典的 Hill 助人理论',
         '拥有人类心理咨询师的专业话术能力',
@@ -228,16 +236,19 @@ def emohaa_meta_gen() -> dict:
     return meta
 
 def token_gen() -> str:
-    """Generate a jwt token for jwt-supported services.
+    """Generate jwt tokens for jwt-supported services.
 
-    Jwt-support ability is judged by the `jwt` value in conf.
-    Currently the only one supporting jwt is GLM.
+    1. If the desired service is not jwt-supported,
+       return `KEY` directly as str.
+    2. If it is, split it by `.` and assess its length.
+    3. If length is 3, the user puts a jwt token in `conf`, so return it directly.
+    4. If length is not 2, `KEY` is not valid and call `exitc()`.
+    5. Then length should be 2, since there is at least one `.` or `KEYcheck()` will fail.
+       Generate a token that expires in 30 sec, and return it.
 
-    If the desired service is not jwt-supported,
-    return the KEY directly as str.
+    Jwt-support ability is judged by `conf.jwt`. Currently the only one supporting jwt is GLM.
 
-    If it is, generate a token that expires in 30 sec,
-    and return it as str.
+    Return `KEY` or `token` as str.
     """
     if not conf.get('jwt'):
         return conf.get('KEY')
@@ -287,11 +298,16 @@ def data_gen() -> str:
 def temp_get() -> float:
     """Get TEMPERATURE from user.
 
-    Also check whether temp is within range.
-    If temp is out of range,
-    give an error message and some tips, and try again.
+    1. Get it in single line mode.
+    2. If `None`, return the default value from `conf.temp_range`.
+    3. Convert it into `x.xx` float.
+    4. Check whether `temp` is within range according to `conf.temp_range`.
+    5. If not, raise `ValueError`. If so, return it.
 
-    Return the temp x.xx as float.
+    If `ValueError` occurs, give an error message and some tips, and try again.
+    Conditions: Not a number, out of range, etc.
+
+    Return `temp x.xx` as float.
     """
     while True:
         try:
@@ -309,7 +325,18 @@ def temp_get() -> float:
             print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
             print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
 
-def lines_get() -> list:
+def lines_get() -> str:
+    r"""Multiple line mode general engine.
+
+    Get multiple lines of input from user.
+    A blank line is regarded as EOF mark.
+    If `conf.long_prompt` is true, that would be two blank lines.
+    Use `\n` to join lines after EOF, and then cut whitespace from boundaries.
+
+    Return merged `lines` as str.
+    A common use of this function is:
+    `{parameter} = lines_get() or {default}`
+    """
     lines = []
     nul_count = 0
     while True:
@@ -317,7 +344,6 @@ def lines_get() -> list:
         if conf.get('long_prompt'):
             if line == '':
                 if nul_count:
-                    del lines[-1]
                     break
                 nul_count += 1
             elif nul_count:
@@ -326,21 +352,18 @@ def lines_get() -> list:
             if line == '':
                 break
         lines.append(line)
-    return lines
+    # print('\n'.join(lines).strip().replace('\n','\\n'))
+    return '\n'.join(lines).strip()
 
 def system_get() -> dict:
     print('SYSTEM')
-    lines = lines_get()
-    sys = '\n'.join(lines) if lines else 'You are a helpful assistant.'
+    sys = lines_get() or 'You are a helpful assistant.'
     sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
     print(f'USER #{conf.get("rnd")}')
-    lines = lines_get()
-    if not lines:
-        exitc('INF: Null input, chat ended.')
-    usr = '\n'.join(lines)
+    usr = lines_get() or exitc('INF: Null input, chat ended.')
     return {'role': 'user', 'content': usr}
 
 def ast_nostream() -> None:
@@ -466,7 +489,7 @@ except Exception:
     print()
     print_exc()
     print()
-    print('ERR: Unexcepted error(s) occurred.')
+    print('ERR: Unexpected error(s) occurred.')
     print('TIP: See above for more info.')
 finally:
     pause = input('INF: Press Enter to exit...')
