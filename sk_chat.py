@@ -14,6 +14,8 @@ Can handle any of the following exceptions:
   Ctrl+C exit requested by the user.
 - `requests.exceptions.Timeout`
   `ConnectTimeout` or `ReadTimeout`, as a network issue.
+- `requests.exceptions.ConnectionError`
+  Also a network issue.
 
 Other exceptions will be printed for debugging.
 
@@ -109,8 +111,8 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
                 return lst[lt.index(chn)]
             else:
                 for m,n in enumerate(lt):
-                    if keyword == 'service' and sel_guess(chn,n,False) or \
-                       keyword ==  'model'  and sel_guess(chn,n,True):
+                    if keyword == 'service' and sel_guess(chn.strip(),n) or \
+                       keyword ==  'model'  and sel_guess(chn.strip(),n):
                         return lst[m]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
@@ -126,18 +128,18 @@ def info_print(lt:list) -> None:
     if k % 2 == 1:
         print()
 
-def sel_guess(chn:str,sel:str,stripping:bool) -> bool:
-    if stripping and '-' in sel:
-        selp = sel.lstrip('depskglm')
-        if selp[0] == '-':
-            selp = selp[1:]
+def sel_guess(chn:str,sel:str) -> bool:
+    mdlist = ('deepseek','glm','moonshot')
+    sell = sel.split('-',1)
+    if sell[0] in mdlist:
+        selp = sell[1]
     else:
         selp = sel
     # print(selp)
-    if chn.strip() == selp:
+    if chn == selp:
         print(f'INF: Selection accepted: {sel}.')
         return True
-    if chn.strip() in selp:
+    if chn in selp:
         print(f'INF: Selection guessed: {sel}. Accepted.')
         return True
     return False
@@ -164,16 +166,16 @@ def service_infoget(service:str) -> dict:
             'chk_url': None,
             'temp_range': (1,0.95),
             'models': (
-                ('glm-zero-preview',None,None),
-                ('glm-4-plus',None,glm_tools),
-                ('glm-4-air-0111',None,glm_tools),
-                ('glm-4-airx',None,glm_tools),
-                ('glm-4-flash',None,glm_tools),
-                ('glm-4-flashx',None,glm_tools),
-                ('glm-4-long',None,glm_tools),
-                ('codegeex-4',8192,None),
+                ('glm-zero-preview',15360,None),
+                ('glm-4-plus',4095,glm_tools),
+                ('glm-4-air-0111',4095,glm_tools),
+                ('glm-4-airx',4095,glm_tools),
+                ('glm-4-flash',4095,glm_tools),
+                ('glm-4-flashx',4095,glm_tools),
+                ('glm-4-long',4095,glm_tools),
+                ('codegeex-4',32768,None),
                 ('charglm-4',4095,None),
-                ('emohaa',None,None)
+                ('emohaa',8192,None)
             )
         },
         'KIMI': {
@@ -396,9 +398,10 @@ def ast_nostream() -> None:
         conf.get('cht_url'),
         headers = headers_gen(),
         data = data_gen(),
-        timeout = (3.05,9.05)
+        timeout = (3.05,None)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
+        # print(rsp.text)
         if conf.get('model') == 'deepseek-reasoner':
             print(json.loads(rsp.text)['choices'][0]['message']['reasoning_content'])
             print()
@@ -422,12 +425,17 @@ def ast_stream() -> None:
         conf.get('cht_url'),
         headers = headers_gen(),
         data = data_gen(),
-        timeout = (3.05,9.05),
+        timeout = (3.05,30),
         stream = True
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         for line in rsp.iter_lines():
+            # print(line)
             if line:
+                if line == b': keep-alive':
+                    print('INF: Stay connected. Please wait.')
+                    print('TIP: Typically due to server load.')
+                    continue
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
@@ -461,7 +469,7 @@ def balance_chk() -> str:
         conf.get('chk_url'),
         headers = headers_gen(False),
         data = {},
-        timeout = (3.05,9.05)
+        timeout = (3.05,10)
     )
     text = json.loads(rsp.text)
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
@@ -516,7 +524,11 @@ except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
 except requests.exceptions.Timeout:
+    print()
     print("ERR: The request timed out.")
+except requests.exceptions.ConnectionError:
+    print()
+    print('ERR: A Connection error occurred.')
 # pylint: disable-next=broad-exception-caught
 except Exception:
     print()
