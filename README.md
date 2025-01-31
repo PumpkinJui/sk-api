@@ -175,6 +175,9 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
   选填项，默认为 `true`。
+- `autotime`：`bool`。设定为 `true` 时，自动在系统提示词中追加当前 UTC 时间，格式为 `%Y-%m-%d %H:%M:%S`；`false` 禁用。  
+  开启后，可能触发意想不到的回复 (特别是 `deepseek-reasoner` 模型)。  
+  选填项，默认为 `true`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。

@@ -6,6 +6,7 @@ checklt = {
     "balance_chk": [True,bool,False],
     "long_prompt": [False,bool,False],
     "tool_use": [True,bool,False],
+    "autotime": [True,bool,False],
     "service": [{
         "DSK": [{
             "KEY": ["",str,True],

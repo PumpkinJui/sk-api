@@ -384,7 +384,8 @@ def lines_get() -> str:
 def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
-    sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+    if conf.get('autotime'):
+        sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
