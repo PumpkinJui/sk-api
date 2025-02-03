@@ -43,24 +43,15 @@
 1. 申请 API KEY。一般会提供有效期不定的体验金。
    - [DeepSeek Platform](https://platform.deepseek.com/api_keys)
    - [BigModel Platform](https://bigmodel.cn/usercenter/apikeys)
-2. 将 API KEY 按 JSON 格式填入 `sk.json` 文件，位于 `service` 下 `DSK` 或 `GLM` 中的 `KEY` 键。例如：
-   ```json
-   {
-       "service": {
-           "DSK": {
-               "KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-           }
-       }
-   }
-   ```
+2. 自版本 1.1.1 开始，我们在 Releases 页面提供示例配置文件。将 API KEY 填入示例 `sk.json` 文件中 `ENTER_YOUR_KEY` 所在位置，并把用不上的删除；如果不删会报错，这是*特性*。
 3. 启动程序。如果你填入了两个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。
 4. 输入 Temperature。对 deepseek-reasoner 不起作用。以下简要信息限于「不会报错」。  
    - 对于 DSK，这是介于 0 和 2 之间的两位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.00。
    - 对于 GLM，这是介于 0 和 1 之间的两位小数，包含两端。更多信息见 [BigModel 官方说明](https://bigmodel.cn/dev/api/parameter-description)。可留空，默认为 0.95。
 5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。
 6. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
-7. 等待回复。回复完成后，可以继续重复第 4 步，也可以直接敲回车终止对话。
-8. 如有需要，在退出程序前保存对话内容。程序不保留历史记录。
+7. 等待回复。回复完成后，可以继续重复第 6 步，也可以直接敲回车终止对话。
+8. 如有需要，在退出程序前通过截图、复制文本等方式保存对话内容。程序不保留历史记录。
 
 ### 自行打包
 
@@ -191,13 +182,13 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
     - `model`：`str`。选择使用的模型。  
       选填项，默认为 `prompt`。可选项包括：
       - prompt
-      - glm-zero-preview
       - glm-4-plus
       - glm-4-air-0111
       - glm-4-airx
       - glm-4-flash
       - glm-4-flashx
       - glm-4-long
+      - glm-zero-preview
       - codegeex-4
       - charglm-4
       - emohaa
