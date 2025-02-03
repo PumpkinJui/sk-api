@@ -31,7 +31,7 @@ The documentation system structure:
 - Returns
 """
 
-from datetime import datetime,UTC # provide date to LLMs
+from datetime import datetime,timezone # provide date to LLMs
 import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
@@ -259,8 +259,8 @@ def token_gen() -> str:
         exitc('ERR: Invalid KEY.')
     payload = {
         "api_key": ksp[0],
-        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 30 * 1000,
-        "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
+        "exp": int(round(datetime.now(timezone.utc).timestamp() * 1000)) + 30 * 1000,
+        "timestamp": int(round(datetime.now(timezone.utc).timestamp() * 1000)),
     }
     return encode(
         payload,
@@ -358,7 +358,7 @@ def lines_get() -> str:
 def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
-    sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+    sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
