@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/build.yml'
+      - 'sk_chat.py'
+      - 'sk_conf.py'
   workflow_dispatch: null
 
 jobs:
@@ -28,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
+          pip install -r requirements.txt
 
       - name: Build Windows executable
         run: >
