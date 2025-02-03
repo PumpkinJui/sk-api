@@ -166,13 +166,13 @@ def service_infoget(service:str) -> dict:
             'chk_url': None,
             'temp_range': (1,0.95),
             'models': (
-                ('glm-zero-preview',15360,None),
                 ('glm-4-plus',4095,glm_tools),
                 ('glm-4-air-0111',4095,glm_tools),
                 ('glm-4-airx',4095,glm_tools),
                 ('glm-4-flash',4095,glm_tools),
                 ('glm-4-flashx',4095,glm_tools),
                 ('glm-4-long',4095,glm_tools),
+                ('glm-zero-preview',15360,None),
                 ('codegeex-4',32768,None),
                 ('charglm-4',4095,None),
                 ('emohaa',8192,None)
