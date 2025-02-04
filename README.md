@@ -4,9 +4,11 @@
 [![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
 ![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=python&logoColor=white&color=477DB2)
 
+![GitHub Release: The lastest release name.](https://img.shields.io/github/v/release/PumpkinJui/sk-api?display_name=tag&style=for-the-badge&color=limegreen)
+![GitHub Actions Workflow Status: Building status.](https://img.shields.io/github/actions/workflow/status/PumpkinJui/sk-api/build.yml?style=for-the-badge)
+
 [![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
 ![Last Commit: When was the last commit made.](https://img.shields.io/github/last-commit/PumpkinJui/sk-api?display_timestamp=author&style=for-the-badge&color=yellow)
-![GitHub Branch Check Runs: Building status.](https://img.shields.io/github/check-runs/PumpkinJui/sk-api/main?style=for-the-badge)
 
 通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
