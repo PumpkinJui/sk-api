@@ -221,7 +221,6 @@ def glm_tools_gen() -> list:
     return tools
 
 def kimi_tools_gen() -> list:
-    return None
     tools = [{
         "type": "builtin_function",
         "function": {
@@ -402,15 +401,26 @@ def ast_nostream() -> None:
         timeout = (3.05,None)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        # print(rsp.text)
+        choices = json.loads(rsp.text)['choices'][0]
+        # print(choices)
         if conf.get('model') == 'deepseek-reasoner':
-            print(json.loads(rsp.text)['choices'][0]['message']['reasoning_content'])
+            print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-        ast = json.loads(rsp.text)['choices'][0]['message']['content']
-        print(ast)
-        conf['msg'].append({'role': 'assistant', 'content': ast})
-        print()
+        ast = choices.get('message')
+        print(ast.get('content'),end='')
+        conf['msg'].append(ast)
+        if choices.get('finish_reason') == 'tool_calls':
+            for tool_call in ast.get('tool_calls'):
+                conf['msg'].append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.get('id'),
+                    "name": tool_call.get('function').get('name'),
+                    "content": tool_call.get('function').get('arguments'),
+                })
+            ast_nostream()
+        else:
+            print('\n')
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(

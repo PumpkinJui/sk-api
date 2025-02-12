@@ -286,6 +286,7 @@ key: [value,vtype,required]
 如果该文件存在并合 JSON 语法，检查所有配置项，将合法配置合并进默认配置，并返回合并后的配置。
 
 </details>
+</details>
 
 ## TODO
 
