@@ -431,6 +431,9 @@ def ast_nostream() -> None:
 def ast_stream() -> None:
     ast = ''
     gocon = True
+    tool_lt = []
+    tool = {}
+    tool_index = 0
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -460,12 +463,51 @@ def ast_stream() -> None:
                         print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
                         gocon = True
                 else:
-                    delta = delta_list.get('reasoning_content')
-                    gocon = False
+                    if delta := delta_list.get('reasoning_content'):
+                        gocon = False
+                    elif delta := delta_list.get('tool_calls'):
+                        delta = delta[0]
+                        index = delta.get('index')
+                        if index != tool_index:
+                            tool_index += 1
+                            tool['role'] = 'tool'
+                            tool_lt.append(tool)
+                        if delta.get('id'):
+                            tool['tool_call_id'] = delta.get('id')
+                            tool['name'] = delta.get('function').get('name')
+                        else:
+                            tool['content'] = delta.get('function').get('arguments')
+                        delta = ''
+                    else:
+                        delta = ''
                 print(delta,end='',flush=True)
-        conf['msg'].append({'role': 'assistant', 'content': ast})
-        print()
-        print()
+        if tool:
+            tool['role'] = 'tool'
+            tool_lt.append(tool)
+            tool_ast_lt = []
+            for m,n in enumerate(tool_lt):
+                tool_ast = {
+                    'index': m,
+                    'id': n.get('tool_call_id'),
+                    'type': 'builtin_function', 
+                    'function': {
+                        'name': n.get('name'),
+                        'arguments': n.get('content')
+                    }
+                }
+                tool_ast_lt.append(tool_ast)
+            conf['msg'].append({
+                'role': 'assistant',
+                'content': ast,
+                'tool_calls': tool_ast_lt
+            })
+            for i in tool_lt:
+                conf['msg'].append(i)
+            ast_stream()
+        else:
+            conf['msg'].append({'role': 'assistant', 'content': ast})
+            print()
+            print()
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
