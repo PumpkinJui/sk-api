@@ -484,25 +484,7 @@ def ast_stream() -> None:
         if tool:
             tool['role'] = 'tool'
             tool_lt.append(tool)
-            tool_ast_lt = []
-            for m,n in enumerate(tool_lt):
-                tool_ast = {
-                    'index': m,
-                    'id': n.get('tool_call_id'),
-                    'type': 'builtin_function', 
-                    'function': {
-                        'name': n.get('name'),
-                        'arguments': n.get('content')
-                    }
-                }
-                tool_ast_lt.append(tool_ast)
-            conf['msg'].append({
-                'role': 'assistant',
-                'content': ast,
-                'tool_calls': tool_ast_lt
-            })
-            for i in tool_lt:
-                conf['msg'].append(i)
+            tool_append(tool_lt,ast)
             ast_stream()
         else:
             conf['msg'].append({'role': 'assistant', 'content': ast})
@@ -514,6 +496,27 @@ def ast_stream() -> None:
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
         ))
+
+def tool_append(tool_lt:list,ast:str) -> None:
+    tool_ast_lt = []
+    for m,n in enumerate(tool_lt):
+        tool_ast = {
+            'index': m,
+            'id': n.get('tool_call_id'),
+            'type': 'builtin_function', 
+            'function': {
+                'name': n.get('name'),
+                'arguments': n.get('content')
+            }
+        }
+        tool_ast_lt.append(tool_ast)
+    conf['msg'].append({
+        'role': 'assistant',
+        'content': ast,
+        'tool_calls': tool_ast_lt
+    })
+    for i in tool_lt:
+        conf['msg'].append(i)
 
 # pylint: disable-next=inconsistent-return-statements
 def balance_chk() -> str:
