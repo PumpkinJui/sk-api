@@ -8,7 +8,7 @@ checklt = {
     "tool_use": [True,bool,False],
     "autotime": [True,bool,False],
     "service": [{
-        "DSK": [{
+        "DS": [{
             "KEY": ["",str,True],
             "model": ["prompt",str,False]
         },dict,False],

@@ -148,8 +148,8 @@ def service_infoget(service:str) -> dict:
     glm_tools = glm_tools_gen()
     kimi_tools = kimi_tools_gen()
     info = {
-        'DSK': {
-            'name': 'DSK',
+        'DS': {
+            'name': 'DS',
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
@@ -180,7 +180,7 @@ def service_infoget(service:str) -> dict:
         },
         'KIMI': {
             'name': 'KIMI',
-            'full_name': 'Kimi',
+            'full_name': 'Moonshot',
             'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
             'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
             'temp_range': (1,0.30),
@@ -526,7 +526,7 @@ def balance_chk() -> str:
     )
     text = json.loads(rsp.text)
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        if conf.get('name') == 'DSK':
+        if conf.get('name') == 'DS':
             # pylint: disable-next=consider-using-f-string
             return 'INF: {} {} left in the {} balance.'.format(
                 text['balance_infos'][0]['total_balance'],
