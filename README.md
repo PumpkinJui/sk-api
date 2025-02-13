@@ -287,8 +287,6 @@ key: [value,vtype,required]
 ## TODO
 
 - [ ] 适配更多服务
-      - [ ] QWEN
-      - [ ] KIMI
 - [ ] `sk_conf`：
       - [ ] `[1]` 疑似没有必要存在下去
       - [ ] 查询配置功能
@@ -300,7 +298,7 @@ key: [value,vtype,required]
 - [ ] 添加配置：部分选项直接设为默认或配置值
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中 (可能需要增加配置项)
 - [ ] 将 README 中的函数介绍内嵌
-- [ ] 截断自动继续
+- [ ] 截断/触发限流自动继续
 - [ ] Command-Line Switch
 - [ ] 【高难】适配 `glm-4-alltools`
 - [ ] 【高难】多模型对比

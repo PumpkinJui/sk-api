@@ -9,6 +9,7 @@ on:
       - '.github/workflows/build.yml'
       - 'sk_chat.py'
       - 'sk_conf.py'
+      - 'file_version_info.txt'
   workflow_dispatch: null
 
 jobs:
