@@ -146,9 +146,10 @@ def sel_guess(chn:str,sel:str) -> bool:
 
 def service_infoget(service:str) -> dict:
     glm_tools = glm_tools_gen()
+    kimi_tools = kimi_tools_gen()
     info = {
-        'DSK': {
-            'name': 'DSK',
+        'DS': {
+            'name': 'DS',
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
@@ -176,6 +177,19 @@ def service_infoget(service:str) -> dict:
                 ('charglm-4',4095,None),
                 ('emohaa',8192,None)
             )
+        },
+        'KIMI': {
+            'name': 'KIMI',
+            'full_name': 'Moonshot',
+            'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
+            'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
+            'temp_range': (1,0.30),
+            'models': (
+                ('moonshot-v1-auto',None,kimi_tools),
+                ('moonshot-v1-8k',None,kimi_tools),
+                ('moonshot-v1-32k',None,kimi_tools),
+                ('moonshot-v1-128k',None,kimi_tools),
+            )
         }
     }
     return info.get(service)
@@ -202,6 +216,15 @@ def glm_tools_gen() -> list:
         "web_search": {
             "enable": True,
             "search_prompt": search_prompt
+        }
+    }]
+    return tools
+
+def kimi_tools_gen() -> list:
+    tools = [{
+        "type": "builtin_function",
+        "function": {
+            "name": "$web_search",
         }
     }]
     return tools
@@ -360,7 +383,8 @@ def lines_get() -> str:
 def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
-    sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+    if conf.get('autotime'):
+        sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
@@ -377,15 +401,27 @@ def ast_nostream() -> None:
         timeout = (3.05,None)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        # print(rsp.text)
+        choices = json.loads(rsp.text)['choices'][0]
+        # print(choices)
         if conf.get('model') == 'deepseek-reasoner':
-            print(json.loads(rsp.text)['choices'][0]['message']['reasoning_content'])
+            print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-        ast = json.loads(rsp.text)['choices'][0]['message']['content']
-        print(ast)
-        conf['msg'].append({'role': 'assistant', 'content': ast})
-        print()
+        ast = choices.get('message')
+        print(ast.get('content'),end='')
+        conf['msg'].append(ast)
+        if choices.get('finish_reason') == 'tool_calls':
+            for tool_call in ast.get('tool_calls'):
+                conf['msg'].append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.get('id'),
+                    "name": tool_call.get('function').get('name'),
+                    "content": tool_call.get('function').get('arguments'),
+                })
+            print('INF: Web Search has been performed.')
+            ast_nostream()
+        else:
+            print('\n')
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -394,8 +430,11 @@ def ast_nostream() -> None:
         ))
 
 def ast_stream() -> None:
-    ast = ''
-    gocon = True
+    conf['ast'] = ''
+    conf['gocon'] = True
+    conf['tool_lt'] = []
+    conf['tool'] = {'role': 'tool'}
+    conf['tool_index'] = 0
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -415,27 +454,70 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
-                json_data = json.loads(data)
-                delta = json_data.get('choices')[0].get('delta').get('content')
-                if delta or delta == '':
-                    ast += delta
-                    if not gocon:
-                        print('\n')
-                        print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-                        gocon = True
-                else:
-                    delta = json_data.get('choices')[0].get('delta').get('reasoning_content')
-                    gocon = False
-                print(delta,end='',flush=True)
-        conf['msg'].append({'role': 'assistant', 'content': ast})
-        print()
-        print()
+                if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
+                    continue
+                delta_process(delta_lt)
+        if len(conf.get('tool')) != 1:
+            conf['tool_lt'].append(conf.get('tool'))
+            tool_append(conf.get('tool_lt'))
+            print('INF: Web Search has been performed.')
+            ast_stream()
+        else:
+            conf['msg'].append({'role': 'assistant', 'content': conf.get('ast')})
+            print()
+            print()
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
         ))
+
+def delta_process(delta_lt:str) -> None:
+    if (delta := delta_lt.get('content')) or delta == '':
+        conf['ast'] += delta
+        if not conf.get('gocon'):
+            print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+            conf['gocon'] = True
+    else:
+        if delta := delta_lt.get('reasoning_content'):
+            conf['gocon'] = False
+        elif delta := delta_lt.get('tool_calls'):
+            delta = delta[0]
+            index = delta.get('index')
+            if index != conf.get('tool_index'):
+                conf['tool_index'] += 1
+                conf['tool_lt'].append(conf.get('tool'))
+            if delta.get('id'):
+                conf['tool']['tool_call_id'] = delta.get('id')
+                conf['tool']['name'] = delta.get('function').get('name')
+            else:
+                conf['tool']['content'] = delta.get('function').get('arguments')
+            delta = ''
+        else:
+            delta = ''
+    print(delta,end='',flush=True)
+
+def tool_append(tool_lt:list) -> None:
+    tool_ast_lt = []
+    for m,n in enumerate(tool_lt):
+        tool_ast = {
+            'index': m,
+            'id': n.get('tool_call_id'),
+            'type': 'builtin_function', 
+            'function': {
+                'name': n.get('name'),
+                'arguments': n.get('content')
+            }
+        }
+        tool_ast_lt.append(tool_ast)
+    conf['msg'].append({
+        'role': 'assistant',
+        'content': conf.get('ast'),
+        'tool_calls': tool_ast_lt
+    })
+    for i in tool_lt:
+        conf['msg'].append(i)
 
 # pylint: disable-next=inconsistent-return-statements
 def balance_chk() -> str:
@@ -446,17 +528,25 @@ def balance_chk() -> str:
         data = {},
         timeout = (3.05,10)
     )
+    text = json.loads(rsp.text)
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        # pylint: disable-next=consider-using-f-string
-        return 'INF: {} {} left in the {} balance.'.format(
-            json.loads(rsp.text)['balance_infos'][0]['total_balance'],
-            json.loads(rsp.text)['balance_infos'][0]['currency'],
-            conf.get('full_name')
-        )
+        if conf.get('name') == 'DS':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} {} left in the {} balance.'.format(
+                text['balance_infos'][0]['total_balance'],
+                text['balance_infos'][0]['currency'],
+                conf.get('full_name')
+            )
+        if conf.get('name') == 'KIMI':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} CNY left in the {} balance.'.format(
+                text['data']['available_balance'],
+                conf.get('full_name')
+            )
     # pylint: disable-next=consider-using-f-string
     exitc('ERR: {} {}'.format(
         rsp.status_code,
-        json.loads(rsp.text)['error']['message']
+        text['error']['message']
     ))
 
 def chat() -> None:

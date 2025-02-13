@@ -6,8 +6,9 @@ checklt = {
     "balance_chk": [True,bool,False],
     "long_prompt": [False,bool,False],
     "tool_use": [True,bool,False],
+    "autotime": [True,bool,False],
     "service": [{
-        "DSK": [{
+        "DS": [{
             "KEY": ["",str,True],
             "model": ["prompt",str,False]
         },dict,False],
@@ -15,6 +16,10 @@ checklt = {
             "KEY": ["",str,True],
             "model": ["prompt",str,False],
             "jwt": [True,bool,False]
+        },dict,False],
+        "KIMI": [{
+            "KEY": ["",str,True],
+            "model": ["moonshot-v1-auto",str,False]
         },dict,False]
     },dict,True]
 }

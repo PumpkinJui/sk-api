@@ -48,7 +48,7 @@
 2. 自版本 1.1.1 开始，我们在 Releases 页面提供示例配置文件。将 API KEY 填入示例 `sk.json` 文件中 `ENTER_YOUR_KEY` 所在位置，并把用不上的删除；如果不删会报错，这是*特性*。
 3. 启动程序。如果你填入了两个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。
 4. 输入 Temperature。对 deepseek-reasoner 不起作用。以下简要信息限于「不会报错」。  
-   - 对于 DSK，这是介于 0 和 2 之间的两位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.00。
+   - 对于 DS，这是介于 0 和 2 之间的两位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.00。
    - 对于 GLM，这是介于 0 和 1 之间的两位小数，包含两端。更多信息见 [BigModel 官方说明](https://bigmodel.cn/dev/api/parameter-description)。可留空，默认为 0.95。
 5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。
 6. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
@@ -171,8 +171,11 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
   选填项，默认为 `true`。
+- `autotime`：`bool`。设定为 `true` 时，自动在系统提示词中追加当前 UTC 时间，格式为 `%Y-%m-%d %H:%M:%S`；`false` 禁用。  
+  开启后，可能触发意想不到的回复 (特别是 `deepseek-reasoner` 模型)。  
+  选填项，默认为 `true`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
-  - `DSK`：`dict`。配置 DeepSeek 的信息。选填项。
+  - `DS`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
       选填项，默认为 `prompt`。可选项包括：
@@ -196,6 +199,15 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - emohaa
     - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密 (即使用鉴权 token 进行鉴权)。  
       选填项，默认为 `True`。这不影响直接传入鉴权 token。
+  - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `moonshot-v1-auto`。可选项包括：
+      - prompt
+      - moonshot-v1-auto
+      - moonshot-v1-8k
+      - moonshot-v1-32k
+      - moonshot-v1-128k
 
 </details>
 
@@ -269,6 +281,7 @@ key: [value,vtype,required]
 
 如果该文件存在并合 JSON 语法，检查所有配置项，将合法配置合并进默认配置，并返回合并后的配置。
 
+</details>
 </details>
 
 ## TODO
