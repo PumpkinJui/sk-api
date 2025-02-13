@@ -418,6 +418,7 @@ def ast_nostream() -> None:
                     "name": tool_call.get('function').get('name'),
                     "content": tool_call.get('function').get('arguments'),
                 })
+            print('INF: Web Search has been performed.')
             ast_nostream()
         else:
             print('\n')
@@ -429,11 +430,11 @@ def ast_nostream() -> None:
         ))
 
 def ast_stream() -> None:
-    ast = ''
-    gocon = True
-    tool_lt = []
-    tool = {}
-    tool_index = 0
+    conf['ast'] = ''
+    conf['gocon'] = True
+    conf['tool_lt'] = []
+    conf['tool'] = {'role': 'tool'}
+    conf['tool_index'] = 0
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -453,41 +454,16 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
-                if not (delta_list := json.loads(data).get('choices')[0].get('delta')):
+                if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
                     continue
-                delta = delta_list.get('content')
-                if delta or delta == '':
-                    ast += delta
-                    if not gocon:
-                        print('\n')
-                        print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-                        gocon = True
-                else:
-                    if delta := delta_list.get('reasoning_content'):
-                        gocon = False
-                    elif delta := delta_list.get('tool_calls'):
-                        delta = delta[0]
-                        index = delta.get('index')
-                        if index != tool_index:
-                            tool_index += 1
-                            tool['role'] = 'tool'
-                            tool_lt.append(tool)
-                        if delta.get('id'):
-                            tool['tool_call_id'] = delta.get('id')
-                            tool['name'] = delta.get('function').get('name')
-                        else:
-                            tool['content'] = delta.get('function').get('arguments')
-                        delta = ''
-                    else:
-                        delta = ''
-                print(delta,end='',flush=True)
-        if tool:
-            tool['role'] = 'tool'
-            tool_lt.append(tool)
-            tool_append(tool_lt,ast)
+                delta_process(delta_lt)
+        if len(conf.get('tool')) != 1:
+            conf['tool_lt'].append(conf.get('tool'))
+            tool_append(conf.get('tool_lt'))
+            print('INF: Web Search has been performed.')
             ast_stream()
         else:
-            conf['msg'].append({'role': 'assistant', 'content': ast})
+            conf['msg'].append({'role': 'assistant', 'content': conf.get('ast')})
             print()
             print()
     else:
@@ -497,7 +473,32 @@ def ast_stream() -> None:
             json.loads(rsp.text)['error']['message']
         ))
 
-def tool_append(tool_lt:list,ast:str) -> None:
+def delta_process(delta_lt:str) -> None:
+    if (delta := delta_lt.get('content')) or delta == '':
+        conf['ast'] += delta
+        if not conf.get('gocon'):
+            print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+            conf['gocon'] = True
+    else:
+        if delta := delta_lt.get('reasoning_content'):
+            conf['gocon'] = False
+        elif delta := delta_lt.get('tool_calls'):
+            delta = delta[0]
+            index = delta.get('index')
+            if index != conf.get('tool_index'):
+                conf['tool_index'] += 1
+                conf['tool_lt'].append(conf.get('tool'))
+            if delta.get('id'):
+                conf['tool']['tool_call_id'] = delta.get('id')
+                conf['tool']['name'] = delta.get('function').get('name')
+            else:
+                conf['tool']['content'] = delta.get('function').get('arguments')
+            delta = ''
+        else:
+            delta = ''
+    print(delta,end='',flush=True)
+
+def tool_append(tool_lt:list) -> None:
     tool_ast_lt = []
     for m,n in enumerate(tool_lt):
         tool_ast = {
@@ -512,7 +513,7 @@ def tool_append(tool_lt:list,ast:str) -> None:
         tool_ast_lt.append(tool_ast)
     conf['msg'].append({
         'role': 'assistant',
-        'content': ast,
+        'content': conf.get('ast'),
         'tool_calls': tool_ast_lt
     })
     for i in tool_lt:
