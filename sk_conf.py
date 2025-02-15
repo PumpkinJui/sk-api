@@ -20,6 +20,11 @@ checklt = {
         "KIMI": [{
             "KEY": ["",str,True],
             "model": ["moonshot-v1-auto",str,False]
+        },dict,False],
+        "QWEN": [{
+            "KEY": ["",str,True],
+            "model": ["prompt",str,False],
+            "version": ["latest",str,False]
         },dict,False]
     },dict,True]
 }

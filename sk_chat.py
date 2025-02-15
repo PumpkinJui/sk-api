@@ -3,7 +3,7 @@
 1. Read `conf`.
 2. If balance check is requested
    and the desired service supports it, run it.
-   If not, print an warning message.
+   If not, print a warning message.
 3. Run `chat()`.
 
 Can handle any of the following exceptions:
@@ -65,20 +65,13 @@ def conf_read() -> dict:
     del conf_r['service']
     conf_r.update(service_conf)
     print()
-    if service_conf.get('model'):
-        model_info = service_model(
-            'model',
-            service_info.get('models'),
-            True,
-            service_conf.get('model')
-        )
-    else:
-        model_info = service_model(
-            'model',
-            service_info.get('models'),
-            True
-        )
-    conf_r['model'] = model_info[0]
+    model_info = service_model(
+        'model',
+        service_info.get('models'),
+        True,
+        service_conf.get('model','prompt')
+    )
+    conf_r['model'] = qwen_model_remap(model_info[0],service_conf.get('version'))
     conf_r['max_tokens'] = model_info[1]
     conf_r['tools'] = model_info[2]
     conf_r['msg'] = []
@@ -91,7 +84,7 @@ def conf_read() -> dict:
 def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
     lt = tuple(i[0] for i in lst) if isinstance(lst[0],tuple) else lst
     if sts != 'prompt' and sts not in lt:
-        print(f'WRN: {sts} is not a valid {keyword}.')
+        print(f'WRN: "{sts}" is not a valid {keyword}.')
     if sts != 'prompt' and sts in lt:
         print(f'INF: {keyword.capitalize()} {sts} selected.')
         return lst[lt.index(sts)]
@@ -111,14 +104,20 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
                 return lst[lt.index(chn)]
             else:
                 for m,n in enumerate(lt):
-                    if keyword == 'service' and sel_guess(chn.strip(),n) or \
-                       keyword ==  'model'  and sel_guess(chn.strip(),n):
+                    if sel_guess(chn.strip(),n):
                         return lst[m]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     return lst[0]
 
 def info_print(lt:list) -> None:
+    """Print info neatly.
+
+    Use space filling and tabs to align everything,
+    and print them 2 per line (for the sake of narrow screens).
+
+    No return provided.
+    """
     k = 0
     max_len = max(len(i) for i in lt)
     while k < len(lt):
@@ -129,7 +128,7 @@ def info_print(lt:list) -> None:
         print()
 
 def sel_guess(chn:str,sel:str) -> bool:
-    mdlist = ('deepseek','glm','moonshot')
+    mdlist = ('deepseek','glm','moonshot','qwen')
     sell = sel.split('-',1)
     if sell[0] in mdlist:
         selp = sell[1]
@@ -145,6 +144,35 @@ def sel_guess(chn:str,sel:str) -> bool:
     return False
 
 def service_infoget(service:str) -> dict:
+    """Provide services' info.
+
+    All supported services, models and other info are listed here.
+    For every service, the following keys are provided:
+
+    - name: str.
+            Just repeat the key name so might be removed in the future.
+    - full_name: str.
+                 To simplify the selecting process, the name is usually an abbr.
+                 So this value is used to call the service rather formally.
+    - cht_url: str. CHaT URL.
+    - chk_url: str. balance CHecK URL. None for unsupported ones.
+    - temp_range: tuple (int,int). The first value is max_temp and the second is default_temp.
+    - models: tuple (tuple+ (str,int,dict)).
+      - name: The model name.
+      - max_tokens: The max_tokens to be passed.
+                    If docs don't mention it at all, or mark the max as default,
+                    then a None can be set.
+      - tools: The usable tools. Usually the web search one.
+               If there is none, set to None.
+
+    Changes should be made since mixing dict and tuple is not a good idea.
+
+    1. Generate tools from other functions.
+    2. Define info.
+    3. Return the info of the specified service.
+
+    Return info as dict.
+    """
     glm_tools = glm_tools_gen()
     kimi_tools = kimi_tools_gen()
     info = {
@@ -190,6 +218,26 @@ def service_infoget(service:str) -> dict:
                 ('moonshot-v1-32k',None,kimi_tools),
                 ('moonshot-v1-128k',None,kimi_tools),
             )
+        },
+        'QWEN': {
+            'name': 'QWEN',
+            'full_name': 'ModelStudio',
+            'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+            'chk_url': None,
+            'temp_range': (2,0.70),
+            'models': (
+                ('qwen-max',None,None),
+                ('qwen-plus',None,None),
+                ('qwen-turbo',None,None),
+                ('qwen-long',None,None),
+                ('qwen-math-plus',None,None),
+                ('qwen-math-turbo',None,None),
+                ('qwen-coder-plus',None,None),
+                ('qwen-coder-turbo',None,None),
+                ('deepseek-v3',8192,None),
+                ('deepseek-r1',32768,None),
+                ('qwq-32b-preview',None,None)
+            )
         }
     }
     return info.get(service)
@@ -221,6 +269,10 @@ def glm_tools_gen() -> list:
     return tools
 
 def kimi_tools_gen() -> list:
+    """Kimi-dedicated tools generator.
+
+    Return `tools` as dict. Dead return.
+    """
     tools = [{
         "type": "builtin_function",
         "function": {
@@ -228,6 +280,56 @@ def kimi_tools_gen() -> list:
         }
     }]
     return tools
+
+def qwen_model_remap(model:str,ver:str) -> str:
+    """Qwen-dedicated remaper.
+
+    Qwen has three types of models, roughly speaking.
+
+    1. Commercial version, stable
+    2. Commercial version, latest
+    3. Open-Source version
+
+    In order to simplify the selecting process, they are not fully displayed,
+    but are decided through conf service.QWEN.version.
+    Supported values are `stable`, `latest` and `oss` (Open-Source Software).
+
+    1. Check whether the selected model has a remap choice, or if ver is `stable`.
+       If not, return directly. It is convenient so we just apply this function globally.
+    2. Check whether ver is a supported value.
+       If not, print a warning message and assume it is `latest`.
+    3. Check whether ver is `latest`.
+       If so, add `-latest` to the model, print a remap message and return it.
+    4. Now ver must be `oss`. We will use a dict to remap it, print a message and return it.
+
+    Return `model` as str.
+    """
+    if model not in (
+        'qwen-max','qwen-plus','qwen-turbo',
+        'qwen-math-plus','qwen-math-turbo',
+        'qwen-coder-plus','qwen-coder-turbo'
+    ) or ver == 'stable':
+        return model
+    if ver not in ('stable','latest','oss'):
+        print(f'WRN: "{ver}" is not a valid version.')
+        print('WRN: Fallback to "latest".')
+        ver = 'latest'
+    if ver == 'latest':
+        model += '-latest'
+        print(f'INF: Remap to {model}.')
+        return model
+    oss_map = {
+        'qwen-max': 'qwen2.5-72b-instruct',
+        'qwen-plus': 'qwen2.5-32b-instruct',
+        'qwen-turbo': 'qwen2.5-14b-instruct-1m',
+        'qwen-math-plus': 'qwen2.5-math-72b-instruct',
+        'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
+        'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
+        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct'
+    }
+    model = oss_map.get(model)
+    print(f'INF: Remap to {model}.')
+    return model
 
 def emohaa_meta_gen() -> dict:
     """Emohaa-dedicated meta generator.
@@ -264,7 +366,7 @@ def token_gen() -> str:
     """Generate jwt tokens for jwt-supported services.
 
     1. If the desired service is not jwt-supported,
-       return `KEY` directly as str.
+       return `KEY` directly.
     2. If it is, split it by `.` and assess its length.
     3. If length is 3, the user puts a jwt token in `conf`, so return it directly.
     4. If length is not 2, `KEY` is not valid and call `exitc()`.
@@ -295,6 +397,13 @@ def token_gen() -> str:
     )
 
 def headers_gen(contype:bool=True) -> dict:
+    """Generate headers to make request.
+
+    1. Define the basic header (used by balance_chk)
+    2. If `contype` (CONtent-TYPE) is True (used by chat), add `Content-Type`.
+
+    Return `headers` as dict.
+    """
     headers = {
         'Accept': 'application/json',
         'Authorization': f'Bearer {token_gen()}'
@@ -316,6 +425,12 @@ def data_gen() -> str:
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
         payload['meta'] = conf.get('meta')
+    elif conf.get('tool_use') and conf.get('model') in (
+        'qwen-max','qwen-max-latest',
+        'qwen-plus','qwen-plus-latest',
+        'qwen-turbo','qwen-turbo-latest'
+    ):
+        payload['enable_search'] = True
     payload_json = json.dumps(payload)
     # print(conf.get('msg'),payload_json,sep='\n')
     return payload_json
@@ -329,10 +444,10 @@ def temp_get() -> float:
     4. Check whether `temp` is within range according to `conf.temp_range`.
     5. If not, raise `ValueError`. If so, return it.
 
-    If `ValueError` occurs, give an error message and some tips, and try again.
+    If `ValueError` occurs, print an error message and some tips, and try again.
     Conditions: Not a number, out of range, etc.
 
-    Return `temp x.xx` as float.
+    Return `temp x.xx` as float. Input requested.
     """
     while True:
         try:
@@ -354,11 +469,11 @@ def lines_get() -> str:
     r"""Multiple line mode general engine.
 
     Get multiple lines of input from user.
-    A blank line is regarded as EOF mark.
+    A blank line is regarded as an EOF mark.
     If `conf.long_prompt` is true, that would be two blank lines.
     Use `\n` to join lines after EOF, and then cut whitespace from boundaries.
 
-    Return merged `lines` as str.
+    Return merged `lines` as str. Input requested.
     A common use of this function is:
     `{parameter} = lines_get() or {default}`
     """
@@ -403,7 +518,7 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('model') == 'deepseek-reasoner':
+        if conf.get('model') in ('deepseek-reasoner','deepseek-r1'):
             print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
@@ -550,7 +665,7 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if conf.get('model') != 'deepseek-reasoner':
+    if conf.get('model') not in ('deepseek-reasoner','deepseek-r1'):
         conf['temp'] = temp_get()
     conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
@@ -559,7 +674,8 @@ def chat() -> None:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
         print(
-            f'ASSISTANT #{conf.get("rnd")}' if conf.get('model') != 'deepseek-reasoner'
+            f'ASSISTANT #{conf.get("rnd")}'
+            if conf.get('model') not in ('deepseek-reasoner','deepseek-r1')
             else f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
