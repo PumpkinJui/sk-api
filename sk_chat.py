@@ -35,6 +35,7 @@ The function system structure: (arguments omitted)
   - service_infoget()
     - glm_tools_gen()
     - kimi_tools_gen()
+  - temp_merge()
   - model_remap()
 - Generator
   - token_gen()
@@ -119,6 +120,7 @@ def conf_read() -> dict:
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     conf_r.update(service_info)
+    conf_r = temp_merge(conf_r)
     del conf_r['models']
     # print(conf_r)
     return conf_r
@@ -203,7 +205,7 @@ def service_infoget(service:str) -> dict:
       So this value is used to call the service rather formally.
     - cht_url: str. CHaT URL.
     - chk_url: str. balance CHecK URL. None for unsupported ones.
-    - temp_range: tuple (int,int). The first value is max_temp and the second is default_temp.
+    - temp_range: dict. max_temp, default_temp and no_max.
     - models: tuple (tuple+ (str,int,dict)).
       - name: The model name.
       - max_tokens: The max_tokens to be passed.
@@ -227,7 +229,10 @@ def service_infoget(service:str) -> dict:
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
-            'temp_range': (2,1.00),
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 1.00
+            },
             'models': (
                 ('deepseek-chat',8192,None),
                 ('deepseek-reasoner',8192,None)
@@ -237,8 +242,10 @@ def service_infoget(service:str) -> dict:
             'name': 'GLM',
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-            'chk_url': None,
-            'temp_range': (1,0.95),
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.95
+            },
             'models': (
                 ('glm-4-plus',4095,glm_tools),
                 ('glm-4-air-0111',4095,glm_tools),
@@ -257,7 +264,10 @@ def service_infoget(service:str) -> dict:
             'full_name': 'Moonshot',
             'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
             'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
-            'temp_range': (1,0.30),
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.30
+            },
             'models': (
                 ('moonshot-v1-auto',None,kimi_tools),
                 ('moonshot-v1-8k',None,kimi_tools),
@@ -269,8 +279,11 @@ def service_infoget(service:str) -> dict:
             'name': 'QWEN',
             'full_name': 'ModelStudio',
             'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-            'chk_url': None,
-            'temp_range': (2,0.70),
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 0.70,
+                'no_max': True
+            },
             'models': (
                 ('qwen-max',None,None),
                 ('qwen-plus',None,None),
@@ -332,6 +345,11 @@ def kimi_tools_gen() -> list:
         }
     }]
     return tools
+
+def temp_merge(temp_conf:dict) -> dict:
+    temp_conf.update(temp_conf.get('temp_range'))
+    del temp_conf['temp_range']
+    return temp_conf
 
 def model_remap(model:str,ver:str) -> str:
     """Remap models for QWEN.
@@ -495,16 +513,21 @@ def temp_get() -> float:
             temp = input('TEMPERATURE: ')
             if temp == '':
                 print()
-                return conf.get('temp_range')[1]
+                return conf.get('default_temp')
             temp = round(float(temp),2)
-            if not 0 <= temp <= conf.get('temp_range')[0]:
+            if not conf.get('no_max') and not 0 <= temp <= conf.get('max_temp') or \
+                   conf.get('no_max') and not 0 <= temp < conf.get('max_temp'):
                 raise ValueError
             print()
             return temp
         except ValueError:
             print('ERR: Temperature invalid.')
-            print(f'TIP: 0 <= temp <= {conf.get("temp_range")[0]}.')
-            print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
+            print(
+                f'TIP: 0 <= temp <= {conf.get("max_temp")}.'
+                if not conf.get('no_max') else
+                f'TIP: 0 <= temp < {conf.get("max_temp")}.'
+            )
+            print(f'TIP: Leave blank to use default ({conf.get("default_temp")}).')
 
 def lines_get() -> str:
     r"""A general engine for multiline mode.
