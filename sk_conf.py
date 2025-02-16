@@ -2,51 +2,52 @@ from json import load
 from json.decoder import JSONDecodeError
 
 checklt = {
-    "stream": [True,bool,False],
-    "balance_chk": [True,bool,False],
-    "long_prompt": [False,bool,False],
-    "tool_use": [True,bool,False],
-    "autotime": [True,bool,False],
-    "service": [{
-        "DS": [{
-            "KEY": ["",str,True],
-            "model": ["prompt",str,False]
-        },dict,False],
-        "GLM": [{
-            "KEY": ["",str,True],
-            "model": ["prompt",str,False],
-            "jwt": [True,bool,False]
-        },dict,False],
-        "KIMI": [{
-            "KEY": ["",str,True],
-            "model": ["moonshot-v1-auto",str,False]
-        },dict,False],
-        "QWEN": [{
-            "KEY": ["",str,True],
-            "model": ["prompt",str,False],
-            "version": ["latest",str,False]
-        },dict,False]
-    },dict,True]
+    "stream": (True,bool,False),
+    "balance_chk": (True,bool,False),
+    "long_prompt": (False,bool,False),
+    "tool_use": (True,bool,False),
+    "autotime": (True,bool,False),
+    "service": ({
+        "DS": ({
+            "KEY": ("",str,True),
+            "model": ("prompt",str,False)
+        },dict,False),
+        "GLM": ({
+            "KEY": ("",str,True),
+            "model": ("prompt",str,False),
+            "jwt": (True,bool,False)
+        },dict,False),
+        "KIMI": ({
+            "KEY": ("",str,True),
+            "model": ("moonshot-v1-auto",str,False)
+        },dict,False),
+        "QWEN": ({
+            "KEY": ("",str,True),
+            "model": ("prompt",str,False),
+            "version": ("latest",str,False)
+        },dict,False)
+    },dict,True)
 }
 
-def confDefault(ref:dict=checklt) -> dict:
-    confD = {}
+# pylint: disable-next=dangerous-default-value
+def conf_default(ref:dict=checklt) -> dict:
+    default_conf = {}
     for m,n in ref.items():
         if n[1] == dict:
-            q = confDefault(n[0])
+            q = conf_default(n[0])
             if q:
-                confD[m] = q
+                default_conf[m] = q
             else:
                 continue
         else:
             if n[2]:
                 continue
-            confD[m] = n[0]
-    return confD
+            default_conf[m] = n[0]
+    return default_conf
 
-def confCheck(confG:dict,ref:dict=checklt) -> dict:
-    confC = {}
-    for m,n in confG.items():
+def conf_check(user_conf:dict,ref:dict) -> dict:
+    checked_conf = {}
+    for m,n in user_conf.items():
         if not ref.get(m):
             print(f'WRN: "{m}" is an invalid key.')
         elif ref.get(m)[1] != type(n):
@@ -55,37 +56,38 @@ def confCheck(confG:dict,ref:dict=checklt) -> dict:
             if not n:
                 print(f'WRN: Key "{m}" has an empty dict.')
             else:
-                confC[m] = confCheck(n,ref.get(m)[0])
+                checked_conf[m] = conf_check(n,ref.get(m)[0])
         else:
-            confC[m] = n
-    return confC
+            checked_conf[m] = n
+    return checked_conf
 
-def confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt) -> dict:
-    if confRcheck(confE,ref):
-        for m,n in confE.items():
-            if m not in confI:
-                confI[m] = n
+# pylint: disable-next=dangerous-default-value
+def conf_merge(external_conf:dict,internal_conf:dict=conf_default(),ref:dict=checklt) -> dict:
+    if conf_required_check(external_conf,ref):
+        for m,n in external_conf.items():
+            if m not in internal_conf:
+                internal_conf[m] = n
             elif isinstance(n,dict):
-                if not confMerge(n,confI.get(m),ref.get(m)[0]):
+                if not conf_merge(n,internal_conf.get(m),ref.get(m)[0]):
                     return {}
             else:
-                confI[m] = n
-        return KEYcheck(confI)
-        # return confI
+                internal_conf[m] = n
+        return key_check(internal_conf)
+        # return internal_conf
     return {}
 
-def confRcheck(confR:dict,ref:dict=checklt) -> dict:
+def conf_required_check(required_conf:dict,ref:dict) -> dict:
     for m,n in ref.items():
-        if n[2] and not confR.get(m):
+        if n[2] and not required_conf.get(m):
             print(f'ERR: Key "{m}" is required.')
             return {}
-    return confR
+    return required_conf
 
-def KEYcheck(confK:dict) -> dict: # specific
-    if confK.get('service'):
-        if confK.get('service').get('GLM') and not confK.get('service').get('GLM').get('KEY'):
-            del confK['service']['GLM']
-        for m,n in confK.get('service').items():
+def key_check(key_conf:dict) -> dict: # specific
+    if key_conf.get('service'):
+        if key_conf.get('service').get('GLM') and not key_conf.get('service').get('GLM').get('KEY'):
+            del key_conf['service']['GLM']
+        for m,n in key_conf.get('service').items():
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
@@ -94,21 +96,21 @@ def KEYcheck(confK:dict) -> dict: # specific
                 if n.get('KEY')[:3] != 'sk-':
                     print(f'The KEY for {m} should begin with "sk-".')
                     return {}
-    return confK
+    return key_conf
 
-def confGet(confFile:str) -> dict:
+def conf_get(conf_file:str) -> dict:
     try:
-        with open(confFile,'r',encoding='utf-8') as confF:
-            confG = load(confF)
+        with open(conf_file,'r',encoding='utf-8') as f:
+            user_conf = load(f)
         print('INF: Configurations read!')
     except FileNotFoundError:
         print('ERR: Configurations not exist.')
         print('INF: Applying default configurations...')
-        return confMerge(confDefault())
+        return conf_merge(conf_default())
     except JSONDecodeError:
         print('ERR: Invalid JSON format.')
         print('INF: Applying default configurations...')
-        return confMerge(confDefault())
-    return confMerge(confCheck(confG))
+        return conf_merge(conf_default())
+    return conf_merge(conf_check(user_conf,checklt))
 
-# print(confGet('sk.json'))
+# print(conf_get('sk.json'))

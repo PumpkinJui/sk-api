@@ -21,38 +21,80 @@ Other exceptions will be printed for debugging.
 
 The main code is at the bottom.
 
+---
+
+The function system structure: (arguments omitted)
+
+- Exit
+  exitc()
+- Configuration reader
+  conf_read()
+  - service_model()
+    - info_print()
+    - sel_guess()
+  - service_infoget()
+    - glm_tools_gen()
+    - kimi_tools_gen()
+  - model_remap()
+- Generator
+  - token_gen()
+  - headers_gen()
+  - data_gen()
+- Input reader
+  lines_get()
+  - temp_get()
+  - system_get()
+  - usr_get()
+  - emohaa_meta_get()
+- Balance checker
+  balance_chk()
+- Chat executive
+  chat()
+  - ast_nostream()
+  - ast_stream()
+    - delta_process()
+    - tool_append()
+
+The actual writing and running order may vary.
+
+---
 
 The documentation system structure:
 
 - SUMMARY
 * {blank}
-- Running Steps
+- Instructions
+  (Running Steps, Expected Exceptions)
 * {blank}
-- Expected Exceptions
-* {blank}
+- Arguments
 - Returns
 """
 
-from datetime import datetime,UTC # provide date to LLMs
+from datetime import datetime,timezone # provide date to LLMs
 import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
 from jwt import encode # pass API KEY safely to supported services
-from sk_conf import confGet # read `conf`
+from sk_conf import conf_get # read `conf`
 
 def exitc(reason:str='') -> None:
     """Halfway exit.
 
-    Give a reason and raise `SystemExit`.
+    Print a reason message and raise `SystemExit`.
+    The message must be ERR or INF type.
 
-    No return provided.
+    Args:
+        - reason: str, optional
+          A reason to exit.
+          default: ''
+    Returns: None.
     """
     if reason:
         print(reason)
     raise SystemExit
 
 def conf_read() -> dict:
-    conf_r = confGet('sk.json')
+    conf_r = conf_get('sk.json')
     if not conf_r:
         with open('sk.json','a',encoding='utf-8'):
             pass
@@ -71,7 +113,7 @@ def conf_read() -> dict:
         True,
         service_conf.get('model','prompt')
     )
-    conf_r['model'] = qwen_model_remap(model_info[0],service_conf.get('version'))
+    conf_r['model'] = model_remap(model_info[0],service_conf.get('version'))
     conf_r['max_tokens'] = model_info[1]
     conf_r['tools'] = model_info[2]
     conf_r['msg'] = []
@@ -116,7 +158,10 @@ def info_print(lt:list) -> None:
     Use space filling and tabs to align everything,
     and print them 2 per line (for the sake of narrow screens).
 
-    No return provided.
+    Args:
+        - lt: list
+          The info list.
+    Returns: None.
     """
     k = 0
     max_len = max(len(i) for i in lt)
@@ -146,32 +191,33 @@ def sel_guess(chn:str,sel:str) -> bool:
 def service_infoget(service:str) -> dict:
     """Provide services' info.
 
-    All supported services, models and other info are listed here.
+    Generate tools from other functions first to reduce time-consuming function calling
+    (they might be use more than once).
+    Then all supported services, models and other info are listed.
     For every service, the following keys are provided:
 
     - name: str.
-            Just repeat the key name so might be removed in the future.
+      Just repeat the key name so might be removed in the future.
     - full_name: str.
-                 To simplify the selecting process, the name is usually an abbr.
-                 So this value is used to call the service rather formally.
+      To simplify the selecting process, the name is usually an abbr.
+      So this value is used to call the service rather formally.
     - cht_url: str. CHaT URL.
     - chk_url: str. balance CHecK URL. None for unsupported ones.
     - temp_range: tuple (int,int). The first value is max_temp and the second is default_temp.
     - models: tuple (tuple+ (str,int,dict)).
       - name: The model name.
       - max_tokens: The max_tokens to be passed.
-                    If docs don't mention it at all, or mark the max as default,
-                    then a None can be set.
+        If docs don't mention it at all, or mark the max as default, then a None can be set.
       - tools: The usable tools. Usually the web search one.
-               If there is none, set to None.
+        If there is none, set to None.
 
     Changes should be made since mixing dict and tuple is not a good idea.
 
-    1. Generate tools from other functions.
-    2. Define info.
-    3. Return the info of the specified service.
-
-    Return info as dict.
+    Args:
+        - service: str
+          The service of which you want info.
+    Returns:
+        dict: the info of the specified service.
     """
     glm_tools = glm_tools_gen()
     kimi_tools = kimi_tools_gen()
@@ -245,10 +291,13 @@ def service_infoget(service:str) -> dict:
 def glm_tools_gen() -> list:
     """GLM-dedicated tools generator.
 
-    1. Generate `search-prompt`.
-    2. Generate `tools`.
+    Generate a search prompt first to control searching performance and
+    display the using of tools (although not always useful). Then generate tools.
 
-    Return `tools` as dict. Dead return.
+    Args: None.
+    Returns:
+        list: the GLM tools.
+        Dead return.
     """
     search_prompt = '\n'.join([
         '','',
@@ -271,7 +320,10 @@ def glm_tools_gen() -> list:
 def kimi_tools_gen() -> list:
     """Kimi-dedicated tools generator.
 
-    Return `tools` as dict. Dead return.
+    Args: None.
+    Returns:
+        list: the Kimi tools.
+        Dead return.
     """
     tools = [{
         "type": "builtin_function",
@@ -281,8 +333,8 @@ def kimi_tools_gen() -> list:
     }]
     return tools
 
-def qwen_model_remap(model:str,ver:str) -> str:
-    """Qwen-dedicated remaper.
+def model_remap(model:str,ver:str) -> str:
+    """Remap models for QWEN.
 
     Qwen has three types of models, roughly speaking.
 
@@ -292,17 +344,25 @@ def qwen_model_remap(model:str,ver:str) -> str:
 
     In order to simplify the selecting process, they are not fully displayed,
     but are decided through conf service.QWEN.version.
-    Supported values are `stable`, `latest` and `oss` (Open-Source Software).
 
     1. Check whether the selected model has a remap choice, or if ver is `stable`.
-       If not, return directly. It is convenient so we just apply this function globally.
+       If not, return directly.
+       It is convenient so we just apply this function globally
+       (and that's why it is not a 'dedicated' one).
     2. Check whether ver is a supported value.
        If not, print a warning message and assume it is `latest`.
     3. Check whether ver is `latest`.
        If so, add `-latest` to the model, print a remap message and return it.
     4. Now ver must be `oss`. We will use a dict to remap it, print a message and return it.
 
-    Return `model` as str.
+    Args:
+        - model: str
+          The model to be remapped.
+        - ver: str
+          Valid: one of 'stable', 'latest' and 'oss' (Open-Source Software).
+          Short for 'VERsion'.
+    Returns:
+        str: the remapped model.
     """
     if model not in (
         'qwen-max','qwen-plus','qwen-turbo',
@@ -331,37 +391,6 @@ def qwen_model_remap(model:str,ver:str) -> str:
     print(f'INF: Remap to {model}.')
     return model
 
-def emohaa_meta_gen() -> dict:
-    """Emohaa-dedicated meta generator.
-
-    1. Get `user_name` in single line mode.
-    2. Get `user_info` in multiple line mode.
-    3. Generate `bot_info`.
-    4. Generate `meta`.
-
-    Return `meta` as dict. Input requested.
-    """
-    user_name = input('USER NAME\n')
-    if not user_name:
-        user_name = '用户'
-    print()
-    print('USER INFO')
-    user_info = lines_get() or '用户对心理学不太了解。'
-    bot_info = '，'.join([
-        'Emohaa 学习了经典的 Hill 助人理论',
-        '拥有人类心理咨询师的专业话术能力',
-        '具有较强的倾听、情感映射、共情等情绪支持能力',
-        '帮助用户了解自身想法和感受，学习应对情绪问题',
-        '帮助用户实现乐观、积极的心理和情感状态。'
-    ])
-    meta= {
-        "user_name": user_name,
-        "user_info": user_info,
-        "bot_name": "Emohaa",
-        "bot_info": bot_info
-    }
-    return meta
-
 def token_gen() -> str:
     """Generate jwt tokens for jwt-supported services.
 
@@ -375,7 +404,9 @@ def token_gen() -> str:
 
     Jwt-support ability is judged by `conf.jwt`. Currently the only one supporting jwt is GLM.
 
-    Return `KEY` or `token` as str.
+    Args: None.
+    Returns:
+        str: KEY or token.
     """
     if not conf.get('jwt'):
         return conf.get('KEY')
@@ -386,8 +417,8 @@ def token_gen() -> str:
         exitc('ERR: Invalid KEY.')
     payload = {
         "api_key": ksp[0],
-        "exp": int(round(datetime.now(UTC).timestamp() * 1000)) + 30 * 1000,
-        "timestamp": int(round(datetime.now(UTC).timestamp() * 1000)),
+        "exp": int(round(datetime.now(timezone.utc).timestamp() * 1000)) + 30 * 1000,
+        "timestamp": int(round(datetime.now(timezone.utc).timestamp() * 1000)),
     }
     return encode(
         payload,
@@ -397,12 +428,19 @@ def token_gen() -> str:
     )
 
 def headers_gen(contype:bool=True) -> dict:
-    """Generate headers to make request.
+    """Generate headers to make requests.
 
     1. Define the basic header (used by balance_chk)
     2. If `contype` (CONtent-TYPE) is True (used by chat), add `Content-Type`.
 
-    Return `headers` as dict.
+    Args:
+        - contype: bool, optional
+          Whether to add Content-Type to headers,
+          which is required for chat but not for balance_chk.
+          Short for 'CONtent-TYPE'.
+          default: True
+    Returns:
+        dict: the headers.
     """
     headers = {
         'Accept': 'application/json',
@@ -447,7 +485,10 @@ def temp_get() -> float:
     If `ValueError` occurs, print an error message and some tips, and try again.
     Conditions: Not a number, out of range, etc.
 
-    Return `temp x.xx` as float. Input requested.
+    Args: None.
+    Returns:
+        float: The temperature (x.xx).
+    Input requested.
     """
     while True:
         try:
@@ -466,14 +507,17 @@ def temp_get() -> float:
             print(f'TIP: Leave blank to use default ({conf.get("temp_range")[1]}).')
 
 def lines_get() -> str:
-    r"""Multiple line mode general engine.
+    r"""A general engine for multiline mode.
 
-    Get multiple lines of input from user.
+    Get multiple lines of input from the user.
     A blank line is regarded as an EOF mark.
     If `conf.long_prompt` is true, that would be two blank lines.
     Use `\n` to join lines after EOF, and then cut whitespace from boundaries.
 
-    Return merged `lines` as str. Input requested.
+    Args: None.
+    Returns:
+        str: the merged lines of input.
+    Input requested.
     A common use of this function is:
     `{parameter} = lines_get() or {default}`
     """
@@ -499,13 +543,47 @@ def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
     if conf.get('autotime'):
-        sys += f'\nNow it is {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+        sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
     print(f'USER #{conf.get("rnd")}')
     usr = lines_get() or exitc('INF: Null input, chat ended.')
     return {'role': 'user', 'content': usr}
+
+def emohaa_meta_get() -> dict:
+    """Get META from user. Emohaa-dedicated.
+
+    1. Get `user_name` in single line mode.
+    2. Get `user_info` in multiline mode.
+    3. Generate `bot_info`.
+    4. Generate `meta`.
+
+    Args: None.
+    Returns:
+        dict: the emohaa meta.
+    Input requested.
+    """
+    user_name = input('USER NAME\n')
+    if not user_name:
+        user_name = '用户'
+    print()
+    print('USER INFO')
+    user_info = lines_get() or '用户对心理学不太了解。'
+    bot_info = '，'.join([
+        'Emohaa 学习了经典的 Hill 助人理论',
+        '拥有人类心理咨询师的专业话术能力',
+        '具有较强的倾听、情感映射、共情等情绪支持能力',
+        '帮助用户了解自身想法和感受，学习应对情绪问题',
+        '帮助用户实现乐观、积极的心理和情感状态。'
+    ])
+    meta= {
+        "user_name": user_name,
+        "user_info": user_info,
+        "bot_name": "Emohaa",
+        "bot_info": bot_info
+    }
+    return meta
 
 def ast_nostream() -> None:
     rsp = requests.request(
@@ -669,7 +747,7 @@ def chat() -> None:
         conf['temp'] = temp_get()
     conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
-        conf['meta'] = emohaa_meta_gen()
+        conf['meta'] = emohaa_meta_get()
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
