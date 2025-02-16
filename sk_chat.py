@@ -101,11 +101,9 @@ def conf_read() -> dict:
             pass
         exitc('TIP: Please check your conf file.')
     print()
-    service_list = tuple(conf_r.get('service').keys())
-    service_name = service_model('service',service_list,False)
-    service_info = service_infoget(service_name)
-    service_conf = conf_r['service'].get(service_name)
-    del conf_r['service']
+    service_conf = service_model('service',conf_r.get('service'),False)
+    service_info = service_infoget(service_conf.get('service'))
+    del conf_r['service'], service_conf['service']
     conf_r.update(service_conf)
     print()
     model_info = service_model(
@@ -114,9 +112,9 @@ def conf_read() -> dict:
         True,
         service_conf.get('model','prompt')
     )
-    conf_r['model'] = model_remap(model_info[0],service_conf.get('version'))
-    conf_r['max_tokens'] = model_info[1]
-    conf_r['tools'] = model_info[2]
+    conf_r.update(model_info)
+    conf_r['model'] = model_remap(conf_r.get('model'),conf_r.get('version'))
+    __ = conf_r.pop('version',None)
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     conf_r.update(service_info)
@@ -125,13 +123,14 @@ def conf_read() -> dict:
     # print(conf_r)
     return conf_r
 
-def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str:
-    lt = tuple(i[0] for i in lst) if isinstance(lst[0],tuple) else lst
+def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
+    lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
     if sts != 'prompt' and sts in lt:
         print(f'INF: {keyword.capitalize()} {sts} selected.')
-        return lst[lt.index(sts)]
+        lst[sts][keyword] = sts
+        return lst[sts]
     if len(lt) > 1:
         print(f'INF: Multiple {keyword}s available.')
         print('INF: Select one from below by name.')
@@ -145,14 +144,17 @@ def service_model(keyword:str,lst:tuple,lower:bool=True,sts:str='prompt') -> str
                 pass
             elif chn in lt:
                 print(f'INF: Selection accepted: {chn}.')
-                return lst[lt.index(chn)]
+                lst[chn][keyword] = chn
+                return lst[chn]
             else:
-                for m,n in enumerate(lt):
-                    if sel_guess(chn.strip(),n):
-                        return lst[m]
+                for i in lt:
+                    if sel_guess(chn.strip(),i):
+                        lst[i][keyword] = i
+                        return lst[i]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
-    return lst[0]
+    lst[lt[0]][keyword] = lt[0]
+    return lst[lt[0]]
 
 def info_print(lt:list) -> None:
     """Print info neatly.
@@ -198,22 +200,27 @@ def service_infoget(service:str) -> dict:
     Then all supported services, models and other info are listed.
     For every service, the following keys are provided:
 
-    - name: str.
-      Just repeat the key name so might be removed in the future.
-    - full_name: str.
+    - full_name: str
       To simplify the selecting process, the name is usually an abbr.
       So this value is used to call the service rather formally.
-    - cht_url: str. CHaT URL.
-    - chk_url: str. balance CHecK URL. None for unsupported ones.
-    - temp_range: dict. max_temp, default_temp and no_max.
-    - models: tuple (tuple+ (str,int,dict)).
-      - name: The model name.
-      - max_tokens: The max_tokens to be passed.
-        If docs don't mention it at all, or mark the max as default, then a None can be set.
-      - tools: The usable tools. Usually the web search one.
-        If there is none, set to None.
-
-    Changes should be made since mixing dict and tuple is not a good idea.
+    - cht_url: str
+      CHaT URL.
+    - chk_url: str
+      balance CHecK URL. Omit it for unsupported ones.
+    - temp_range: dict
+      - max_temp: int
+        The min temp is always 0.
+      - default_temp: float
+        x.xx
+      - no_max: bool
+        If the max temp is not allowed, set to True. Otherwise omitted.
+    - models: dict
+      - max_tokens: int
+        The max_tokens to be passed.
+        If docs don't mention it at all, or mark the max as default, then omit it.
+      - tools: list
+        The usable tools. Usually the web search one.
+        If there is none, omit it.
 
     Args:
         - service: str
@@ -225,7 +232,6 @@ def service_infoget(service:str) -> dict:
     kimi_tools = kimi_tools_gen()
     info = {
         'DS': {
-            'name': 'DS',
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
@@ -233,34 +239,62 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 2,
                 'default_temp': 1.00
             },
-            'models': (
-                ('deepseek-chat',8192,None),
-                ('deepseek-reasoner',8192,None)
-            )
+            'models': {
+                'deepseek-chat': {
+                    'max_tokens': 8192
+                },
+                'deepseek-reasoner': {
+                    'max_tokens': 8192
+                }
+            }
         },
         'GLM': {
-            'name': 'GLM',
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
             'temp_range': {
                 'max_temp': 1,
                 'default_temp': 0.95
             },
-            'models': (
-                ('glm-4-plus',4095,glm_tools),
-                ('glm-4-air-0111',4095,glm_tools),
-                ('glm-4-airx',4095,glm_tools),
-                ('glm-4-flash',4095,glm_tools),
-                ('glm-4-flashx',4095,glm_tools),
-                ('glm-4-long',4095,glm_tools),
-                ('glm-zero-preview',15360,None),
-                ('codegeex-4',32768,None),
-                ('charglm-4',4095,None),
-                ('emohaa',8192,None)
-            )
+            'models': {
+                'glm-4-plus': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-4-air-0111': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-4-airx': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-4-flash': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-4-flashx': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-4-long': {
+                    'max_tokens': 4095,
+                    'tools': glm_tools
+                },
+                'glm-zero-preview': {
+                    'max_tokens': 15360
+                },
+                'codegeex-4': {
+                    'max_tokens': 32768
+                },
+                'charglm-4': {
+                    'max_tokens': 4095
+                },
+                'emohaa': {
+                    'max_tokens': 8192
+                }
+            }
         },
         'KIMI': {
-            'name': 'KIMI',
             'full_name': 'Moonshot',
             'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
             'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
@@ -268,15 +302,22 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 1,
                 'default_temp': 0.30
             },
-            'models': (
-                ('moonshot-v1-auto',None,kimi_tools),
-                ('moonshot-v1-8k',None,kimi_tools),
-                ('moonshot-v1-32k',None,kimi_tools),
-                ('moonshot-v1-128k',None,kimi_tools),
-            )
+            'models': {
+                'moonshot-v1-auto': {
+                    'tools': kimi_tools
+                },
+                'moonshot-v1-8k': {
+                    'tools': kimi_tools
+                },
+                'moonshot-v1-32k': {
+                    'tools': kimi_tools
+                },
+                'moonshot-v1-128k': {
+                    'tools': kimi_tools
+                },
+            }
         },
         'QWEN': {
-            'name': 'QWEN',
             'full_name': 'ModelStudio',
             'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
             'temp_range': {
@@ -284,22 +325,27 @@ def service_infoget(service:str) -> dict:
                 'default_temp': 0.70,
                 'no_max': True
             },
-            'models': (
-                ('qwen-max',None,None),
-                ('qwen-plus',None,None),
-                ('qwen-turbo',None,None),
-                ('qwen-long',None,None),
-                ('qwen-math-plus',None,None),
-                ('qwen-math-turbo',None,None),
-                ('qwen-coder-plus',None,None),
-                ('qwen-coder-turbo',None,None),
-                ('deepseek-v3',8192,None),
-                ('deepseek-r1',32768,None),
-                ('qwq-32b-preview',None,None)
-            )
+            'models': {
+                'qwen-max': {},
+                'qwen-plus': {},
+                'qwen-turbo': {},
+                'qwen-long': {},
+                'qwen-math-plus': {},
+                'qwen-math-turbo': {},
+                'qwen-coder-plus': {},
+                'qwen-coder-turbo': {},
+                'deepseek-v3': {
+                    'max_tokens': 8192
+                },
+                'deepseek-r1': {
+                    'max_tokens': 32768
+                },
+                'qwq-32b-preview': {}
+            }
         }
     }
-    return info.get(service)
+    sinfo = info.get(service)
+    return sinfo
 
 def glm_tools_gen() -> list:
     """GLM-dedicated tools generator.
@@ -746,14 +792,14 @@ def balance_chk() -> str:
     )
     text = json.loads(rsp.text)
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        if conf.get('name') == 'DS':
+        if conf.get('full_name') == 'DeepSeek':
             # pylint: disable-next=consider-using-f-string
             return 'INF: {} {} left in the {} balance.'.format(
                 text['balance_infos'][0]['total_balance'],
                 text['balance_infos'][0]['currency'],
                 conf.get('full_name')
             )
-        if conf.get('name') == 'KIMI':
+        if conf.get('full_name') == 'Moonshot':
             # pylint: disable-next=consider-using-f-string
             return 'INF: {} CNY left in the {} balance.'.format(
                 text['data']['available_balance'],
@@ -811,4 +857,4 @@ except Exception:
     print('ERR: Unexpected error(s) occurred.')
     print('TIP: See above for more info.')
 finally:
-    pause = input('INF: Press Enter to exit...')
+    __ = input('INF: Press Enter to exit...')

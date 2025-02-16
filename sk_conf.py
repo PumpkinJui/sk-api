@@ -84,10 +84,11 @@ def conf_required_check(required_conf:dict,ref:dict) -> dict:
     return required_conf
 
 def key_check(key_conf:dict) -> dict: # specific
-    if key_conf.get('service'):
-        if key_conf.get('service').get('GLM') and not key_conf.get('service').get('GLM').get('KEY'):
-            del key_conf['service']['GLM']
+    if ser := key_conf.get('service'):
+        dele = [i for i in ser.keys() if ser.get(i) and not ser.get(i).get('KEY')]
+        __ = [key_conf['service'].pop(i) for i in dele]
         for m,n in key_conf.get('service').items():
+            # print(m,n)
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
