@@ -35,7 +35,6 @@ The function system structure: (arguments omitted)
   - service_infoget()
     - glm_tools_gen()
     - kimi_tools_gen()
-  - temp_merge()
   - model_remap()
 - Generator
   - token_gen()
@@ -103,8 +102,9 @@ def conf_read() -> dict:
     print()
     service_conf = service_model('service',conf_r.get('service'),False)
     service_info = service_infoget(service_conf.get('service'))
-    del conf_r['service'], service_conf['service']
+    conf_r.update(service_info)
     conf_r.update(service_conf)
+    del conf_r['service']
     print()
     model_info = service_model(
         'model',
@@ -113,13 +113,12 @@ def conf_read() -> dict:
         service_conf.get('model','prompt')
     )
     conf_r.update(model_info)
+    conf_r.update(conf_r.get('temp_range'))
     conf_r['model'] = model_remap(conf_r.get('model'),conf_r.get('version'))
     __ = conf_r.pop('version',None)
+    del conf_r['models'], conf_r['temp_range']
     conf_r['msg'] = []
     conf_r['rnd'] = 0
-    conf_r.update(service_info)
-    conf_r = temp_merge(conf_r)
-    del conf_r['models']
     # print(conf_r)
     return conf_r
 
@@ -221,6 +220,8 @@ def service_infoget(service:str) -> dict:
       - tools: list
         The usable tools. Usually the web search one.
         If there is none, omit it.
+      - temp_range: dict
+        The same as the above one; use it to override the service setting.
 
     Args:
         - service: str
@@ -329,13 +330,35 @@ def service_infoget(service:str) -> dict:
                 'qwen-max': {},
                 'qwen-plus': {},
                 'qwen-turbo': {},
-                'qwen-long': {},
-                'qwen-math-plus': {},
-                'qwen-math-turbo': {},
+                'qwen-long': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 1.00,
+                        'no_max': True
+                    }
+                },
+                'qwen-math-plus': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.00,
+                        'no_max': True
+                    }
+                },
+                'qwen-math-turbo': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.00,
+                        'no_max': True
+                    }
+                },
                 'qwen-coder-plus': {},
                 'qwen-coder-turbo': {},
                 'deepseek-v3': {
-                    'max_tokens': 8192
+                    'max_tokens': 8192,
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 1.00
+                    }
                 },
                 'deepseek-r1': {
                     'max_tokens': 32768
@@ -391,11 +414,6 @@ def kimi_tools_gen() -> list:
         }
     }]
     return tools
-
-def temp_merge(temp_conf:dict) -> dict:
-    temp_conf.update(temp_conf.get('temp_range'))
-    del temp_conf['temp_range']
-    return temp_conf
 
 def model_remap(model:str,ver:str) -> str:
     """Remap models for QWEN.
