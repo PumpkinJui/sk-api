@@ -509,27 +509,18 @@ def token_gen() -> str:
         headers={"alg": "HS256", "sign_type": "SIGN"},
     )
 
-def headers_gen(contype:bool=True) -> dict:
+def headers_gen() -> dict:
     """Generate headers to make requests.
 
-    1. Define the basic header (used by balance_chk)
-    2. If `contype` (CONtent-TYPE) is True (used by chat), add `Content-Type`.
-
-    Args:
-        - contype: bool, optional
-          Whether to add Content-Type to headers,
-          which is required for chat but not for balance_chk.
-          Short for 'CONtent-TYPE'.
-          default: True
+    Args: None.
     Returns:
         dict: the headers.
     """
     headers = {
+        'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization': f'Bearer {token_gen()}'
     }
-    if contype:
-        headers['Content-Type'] = 'application/json'
     # print(headers)
     return headers
 
@@ -804,7 +795,7 @@ def balance_chk() -> str:
     rsp = requests.request(
         "GET",
         conf.get('chk_url'),
-        headers = headers_gen(False),
+        headers = headers_gen(),
         data = {},
         timeout = (3.05,10)
     )
