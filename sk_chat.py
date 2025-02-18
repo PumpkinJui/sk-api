@@ -39,7 +39,7 @@ The function system structure: (arguments omitted)
 - Generator
   - token_gen()
   - headers_gen()
-  - data_gen()
+  - payload_gen()
 - Input reader
   lines_get()
   - temp_get()
@@ -510,7 +510,7 @@ def token_gen() -> str:
     )
 
 def headers_gen() -> dict:
-    """Generate headers to make requests.
+    """Generate request headers.
 
     Args: None.
     Returns:
@@ -524,7 +524,17 @@ def headers_gen() -> dict:
     # print(headers)
     return headers
 
-def data_gen() -> str:
+def payload_gen() -> str:
+    """Generate the request payload.
+
+    1. Generate the basic payload.
+    2. Add tools/meta to it, if conditions are met.
+    3. Dump it into json format.
+
+    Args: None.
+    Returns:
+        str: The json-format payload.
+    """
     payload = {
         "messages": conf.get('msg'),
         "model": conf.get('model'),
@@ -547,7 +557,7 @@ def data_gen() -> str:
     return payload_json
 
 def temp_get() -> float:
-    """Get TEMPERATURE from user.
+    """Get TEMPERATURE from the user.
 
     1. Get it in single line mode.
     2. If `None`, return the default value from `conf.temp_range`.
@@ -618,6 +628,23 @@ def lines_get() -> str:
     return '\n'.join(lines).strip()
 
 def system_get() -> dict:
+    """Get SYSTEM PROMPT from the user.
+
+    1. Get it in multiline mode.
+       The multiline mode is used because Kimi's official default system prompt is multiline.
+       Although I didn't use it, I realized its potential demand.
+       Original:
+         https://platform.moonshot.cn/docs/guide/faq#为什么-api-返回的结果和-kimi-智能助手返回的结果不一致
+         https://github.com/MoonshotAI/MoonshotAI-Cookbook/
+           blob/master/examples/awesome_kimi_prompt/kimi_assistant.json
+    2. If `None`, use the default.
+    3. Add time to it if `conf.autotime` is True.
+
+    Args: None.
+    Returns:
+        dict: The system prompt in the message format.
+    Input requested.
+    """
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
     if conf.get('autotime'):
@@ -625,6 +652,16 @@ def system_get() -> dict:
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
+    """Get USER PROMPT from the user.
+
+    1. Get it in multiline mode.
+    2. If `None`, exit the program peacefully.
+
+    Args: None.
+    Returns:
+        dict: The user prompt in the message format.
+    Input requested.
+    """
     print(f'USER #{conf.get("rnd")}')
     usr = lines_get() or exitc('INF: Null input, chat ended.')
     return {'role': 'user', 'content': usr}
@@ -668,7 +705,7 @@ def ast_nostream() -> None:
         "POST",
         conf.get('cht_url'),
         headers = headers_gen(),
-        data = data_gen(),
+        data = payload_gen(),
         timeout = (3.05,None)
     )
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
@@ -710,7 +747,7 @@ def ast_stream() -> None:
         "POST",
         conf.get('cht_url'),
         headers = headers_gen(),
-        data = data_gen(),
+        data = payload_gen(),
         timeout = (3.05,30),
         stream = True
     )
@@ -831,8 +868,8 @@ def chat() -> None:
         conf['msg'].append(usr_get())
         print(
             f'ASSISTANT #{conf.get("rnd")}'
-            if conf.get('model') not in ('deepseek-reasoner','deepseek-r1')
-            else f'ASSISTANT REASONING #{conf.get("rnd")}'
+            if conf.get('model') not in ('deepseek-reasoner','deepseek-r1') else
+            f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
         ast_stream() if conf.get('stream') else ast_nostream()
@@ -846,7 +883,7 @@ try:
             else f'WRN: Balance check is unsupported for {conf.get("full_name")}.'
         )
     print()
-    # print(data_gen([],0,False))
+    # print(payload_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()
 except KeyboardInterrupt:

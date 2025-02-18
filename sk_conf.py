@@ -1,46 +1,48 @@
 from json import load
 from json.decoder import JSONDecodeError
+from types import MappingProxyType as MPT
 
-checklt = {
-    "stream": (True,bool,False),
-    "balance_chk": (True,bool,False),
-    "long_prompt": (False,bool,False),
-    "tool_use": (True,bool,False),
-    "autotime": (True,bool,False),
+checklt_ori = {
+    "stream": (True,False),
+    "balance_chk": (True,False),
+    "long_prompt": (False,False),
+    "tool_use": (True,False),
+    "autotime": (True,False),
     "service": ({
         "DS": ({
-            "KEY": ("",str,True),
-            "model": ("prompt",str,False)
-        },dict,False),
+            "KEY": ("",True),
+            "model": ("prompt",False)
+        },False),
         "GLM": ({
-            "KEY": ("",str,True),
-            "model": ("prompt",str,False),
-            "jwt": (True,bool,False)
-        },dict,False),
+            "KEY": ("",True),
+            "model": ("prompt",False),
+            "jwt": (True,False)
+        },False),
         "KIMI": ({
-            "KEY": ("",str,True),
-            "model": ("moonshot-v1-auto",str,False)
-        },dict,False),
+            "KEY": ("",True),
+            "model": ("moonshot-v1-auto",False)
+        },False),
         "QWEN": ({
-            "KEY": ("",str,True),
-            "model": ("prompt",str,False),
-            "version": ("latest",str,False)
-        },dict,False)
-    },dict,True)
+            "KEY": ("",True),
+            "model": ("prompt",False),
+            "version": ("latest",False)
+        },False)
+    },True)
 }
 
-# pylint: disable-next=dangerous-default-value
+checklt = MPT(checklt_ori)
+
 def conf_default(ref:dict=checklt) -> dict:
     default_conf = {}
     for m,n in ref.items():
-        if n[1] == dict:
+        if isinstance(n[0],dict):
             q = conf_default(n[0])
             if q:
                 default_conf[m] = q
             else:
                 continue
         else:
-            if n[2]:
+            if n[1]:
                 continue
             default_conf[m] = n[0]
     return default_conf
@@ -50,9 +52,9 @@ def conf_check(user_conf:dict,ref:dict) -> dict:
     for m,n in user_conf.items():
         if not ref.get(m):
             print(f'WRN: "{m}" is an invalid key.')
-        elif ref.get(m)[1] != type(n):
+        elif not isinstance(ref.get(m)[0],type(n)):
             print(f'WRN：Key "{m}" has an invalid value.')
-        elif ref.get(m)[1] == dict:
+        elif isinstance(ref.get(m)[0],dict):
             if not n:
                 print(f'WRN: Key "{m}" has an empty dict.')
             else:
@@ -78,7 +80,7 @@ def conf_merge(external_conf:dict,internal_conf:dict=conf_default(),ref:dict=che
 
 def conf_required_check(required_conf:dict,ref:dict) -> dict:
     for m,n in ref.items():
-        if n[2] and not required_conf.get(m):
+        if n[1] and not required_conf.get(m):
             print(f'ERR: Key "{m}" is required.')
             return {}
     return required_conf
