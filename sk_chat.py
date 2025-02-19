@@ -176,7 +176,7 @@ def info_print(lt:list) -> None:
         print()
 
 def sel_guess(chn:str,sel:str) -> bool:
-    mdlist = ('deepseek','glm','moonshot','qwen')
+    mdlist = ('deepseek','glm','qwen')
     sell = sel.split('-',1)
     if sell[0] in mdlist:
         selp = sell[1]
@@ -307,15 +307,9 @@ def service_infoget(service:str) -> dict:
                 'moonshot-v1-auto': {
                     'tools': kimi_tools
                 },
-                'moonshot-v1-8k': {
+                'kimi-latest': {
                     'tools': kimi_tools
-                },
-                'moonshot-v1-32k': {
-                    'tools': kimi_tools
-                },
-                'moonshot-v1-128k': {
-                    'tools': kimi_tools
-                },
+                }
             }
         },
         'QWEN': {
@@ -860,7 +854,7 @@ def balance_chk() -> str:
 def chat() -> None:
     if conf.get('model') not in ('deepseek-reasoner','deepseek-r1'):
         conf['temp'] = temp_get()
-    conf['msg'].append(system_get())
+        conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
         conf['meta'] = emohaa_meta_get()
     while True:

@@ -20,7 +20,7 @@ checklt_ori = {
         },False),
         "KIMI": ({
             "KEY": ("",True),
-            "model": ("moonshot-v1-auto",False)
+            "model": ("prompt",False)
         },False),
         "QWEN": ({
             "KEY": ("",True),
