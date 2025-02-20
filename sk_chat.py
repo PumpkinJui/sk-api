@@ -778,7 +778,8 @@ def ast_stream() -> None:
 def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or delta == '':
         conf['ast'] += delta
-        if not conf.get('gocon'):
+        if not conf.get('gocon') and \
+           not delta_lt.get('reasoning_content') and delta_lt.get('content'):
             print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
             conf['gocon'] = True
     else:
