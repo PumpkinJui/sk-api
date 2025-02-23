@@ -45,12 +45,19 @@
 1. 申请 API KEY。一般会提供有效期不定的体验金。
    - [DeepSeek Platform](https://platform.deepseek.com/api_keys)
    - [BigModel Platform](https://bigmodel.cn/usercenter/apikeys)
-2. 自版本 1.1.1 开始，我们在 Releases 页面提供示例配置文件。将 API KEY 填入示例 `sk.json` 文件中 `ENTER_YOUR_KEY` 所在位置，并把用不上的删除；如果不删会报错，这是*特性*。
-3. 启动程序。如果你填入了两个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。
-4. 输入 Temperature。对 deepseek-reasoner 不起作用。以下简要信息限于「不会报错」。  
-   - 对于 DS，这是介于 0 和 2 之间的两位小数，包含两端。更多信息见 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。可留空，默认为 1.00。
-   - 对于 GLM，这是介于 0 和 1 之间的两位小数，包含两端。更多信息见 [BigModel 官方说明](https://bigmodel.cn/dev/api/parameter-description)。可留空，默认为 0.95。
-5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。
+   - [Moonshot Platform](https://platform.moonshot.cn/console/api-keys)
+   - [Bailian Console](https://bailian.console.aliyun.com/?apiKey=1#/api-key)
+2. 自版本 1.1.1 开始，我们在 Releases 页面提供示例配置文件。将 API KEY 填入示例 `sk.json` 文件中对应服务的 `ENTER_YOUR_KEY` 所在位置，并把用不上的删除；如果不删会有多余的报错，但不影响使用。
+3. 启动程序。如果你填入了多个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。
+4. 输入 Temperature。以下简要信息限于「不会报错」。  
+   - 因为设了也没有作用，deepseek-reasoner 不展示此条。
+   - 温度数值越低，对于相同的输入，输出越稳定；越高则相反，但设置过高可能出现乱码等情况。
+   - 如不提供，将会自动使用默认值；默认值见输入错误时的说明。
+   - 对于 DS，这是范围 [0,2] 的两位小数。更多信息见 [官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。
+   - 对于 GLM，这是范围 [0,1] 的两位小数。更多信息见 [官方说明](https://bigmodel.cn/dev/api/parameter-description)。
+   - 对于 Kimi，这是范围 [0,2] 的两位小数。更多信息见 [官方说明](https://platform.moonshot.cn/docs/api/chat#%E5%AD%97%E6%AE%B5%E8%AF%B4%E6%98%8E)。
+   - 对于 Qwen 中的大部分，这是范围 [0,2) 的两位小数。更多信息见[官方说明](https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api)。
+5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。因为[官方不建议设](https://github.com/deepseek-ai/DeepSeek-R1)，deepseek-reasoner 不展示此条。
 6. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
 7. 等待回复。回复完成后，可以继续重复第 6 步，也可以直接敲回车终止对话。
 8. 如有需要，在退出程序前通过截图、复制文本等方式保存对话内容。程序不保留历史记录。
@@ -106,11 +113,16 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 <details>
 
-**本程序采用 [MIT](LICENSE) 授权，完全免费。**
+本程序采用 [MIT](LICENSE) 授权，完全免费。
 
-**对于网页对话来说 *是免费的*；对于 API 请求*则不是*。**
+各家 AI 对于网页对话来说*是免费的*；对于 API 请求*则不是*。
 
-具体定价见官方文档。[DeepSeek](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)、[GLM](https://open.bigmodel.cn/pricing)。
+具体定价见官方文档。
+
+- [DeepSeek](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)
+- [GLM](https://open.bigmodel.cn/pricing)
+- [Kimi](https://platform.moonshot.cn/docs/pricing/chat)
+- [Qwen](https://help.aliyun.com/zh/model-studio/getting-started/models)
 
 </details>
 
@@ -148,7 +160,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 已使用 GitHub Actions 实现。如果您需要在其他系统上运行此程序，请提交 issues。
 
-但 Termux 仍暂不支持；请使用源码执行。
+但出于未知原因，Termux 仍暂不支持（显示为 `error: required file not found`）；请使用源码执行。
 
 </details>
 
@@ -202,84 +214,31 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
-      选填项，默认为 `moonshot-v1-auto`。可选项包括：
+      选填项，默认为 `prompt`。可选项包括：
       - prompt
       - moonshot-v1-auto
-      - moonshot-v1-8k
-      - moonshot-v1-32k
-      - moonshot-v1-128k
-
-</details>
-
-### sk_conf.py
-
-<details>
-
-通用配置读取模块。
-
-#### `checklt`
-
-配置对照表。格式如下：
-
-```python
-key: [value,vtype,required]
-```
-
-- `key`：键名称；`str`。
-- `value`：该键对应值；any。
-- `vtype`：对应值所属类型；`type`。
-- `required`：是否必填；`bool`。  
-  在此处设置为 `True` 时，推荐将 `value` 设置为 `None`、`""` (如果类型为 `str`) 等空值。  
-  这可以使它看上去更整洁。即使不这么设置，也不会影响执行结果。
-
-#### `confDefault(ref:dict=checklt) -> dict`
-
-根据 `ref` 递归式生成并返回默认配置。
-
-#### `confCheck(confG:dict,ref:dict=checklt) -> dict`
-
-根据 `ref` 中的配置，检查 `confG` 中的自定义配置。检查项包括：
-
-- 键名称是否包含在可用配置列表内。
-- 键对应值是否符合指定类型。
-- 如果键对应值是字典，检查其是否为空，并在非空时进行递归。
-
-对于非法的自定义配置项，输出一条警告，并跳过该配置项。
-
-检查后，返回合法的自定义配置。
-
-#### `confMerge(confE:dict,confI:dict=confDefault(),ref:dict=checklt) -> dict`
-
-首先，检查必填项是否已经填写。未填写必填项将返回 `False`。
-
-然后，将 `confE` 中的配置项合并到 `confI` 中。`confI` 中原有的配置项将被覆盖。
-
-最后，检查 KEY 的填写格式。如果格式正确，返回合并后的配置；否则返回 `False`。
-
-#### `confRcheck(confR:dict,ref:dict=checklt) -> dict`
-
-根据 `ref` 中的配置，检查必填项是否已经填写。
-
-如果有任一必填项未填写，输出一条错误信息，并返回 `False`；否则返回原配置。
-
-#### `KEYcheck(confK:dict) -> dict`
-
-本程序专用的 KEY 格式检查函数。原理为：
-
-- GLM 的 KEY 和鉴权 token 均由 `.` 作为分隔符；
-- 其他 (DeepSeek、Qwen、Kimi) 均由 `sk-` 开头。后两者可能在未来添加。
-
-因默认配置中 GLM 无 KEY，但在前序环节无法筛查，先检查 GLM 是否存在 KEY。如不存在，删除此键。
-
-然后，进行 KEY 格式检查。检查通过返回配置，不通过返回 `False`。
-
-#### `confGet(confFile:str) -> dict`
-
-读取自定义配置文件 `confFile`。该文件应为 JSON 格式。
-
-如果该文件不存在，或不合 JSON 语法，输出一条错误信息，并返回默认配置。
-
-如果该文件存在并合 JSON 语法，检查所有配置项，将合法配置合并进默认配置，并返回合并后的配置。
+      - kimi-latest
+  - `QWEN`：`dict`。配置 ModelStudio 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - qwen-max
+      - qwen-plus
+      - qwen-turbo
+      - qwen-long
+      - qwen-math-plus
+      - qwen-math-turbo
+      - qwen-coder-plus
+      - qwen-coder-turbo
+      - deepseek-v3
+      - deepseek-r1
+      - qwq-32b-preview
+    - `version`：`str`。选择使用的模型版本。  
+      选填项，默认为 `latest`。可选项包括：
+      - latest
+      - stable
+      - oss
 
 </details>
 </details>
@@ -288,7 +247,6 @@ key: [value,vtype,required]
 
 - [ ] 适配更多服务
 - [ ] `sk_conf`：
-      - [ ] `[1]` 疑似没有必要存在下去
       - [ ] 查询配置功能
       - [ ] 更改配置功能
 - [ ] KEY：
@@ -298,7 +256,7 @@ key: [value,vtype,required]
 - [ ] 添加配置：部分选项直接设为默认或配置值
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中 (可能需要增加配置项)
 - [ ] 将 README 中的函数介绍内嵌
-- [ ] 截断/触发限流自动继续
+- [ ] 截断/触发限流自动继续 (需考虑如何处理 DeepSeek 目前的繁忙状态)
 - [ ] Command-Line Switch
 - [ ] 【高难】适配 `glm-4-alltools`
 - [ ] 【高难】多模型对比
@@ -314,5 +272,5 @@ key: [value,vtype,required]
 
 - [DeepSeek API Docs](https://api-docs.deepseek.com/zh-cn/)
 - [BigModel API Docs](https://bigmodel.cn/dev/welcome)
-- [Qwen API Docs](https://help.aliyun.com/zh/model-studio/)
 - [Kimi API Docs](https://platform.moonshot.cn/docs/intro)
+- [Qwen API Docs](https://help.aliyun.com/zh/model-studio/)
