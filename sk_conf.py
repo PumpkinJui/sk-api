@@ -26,6 +26,11 @@ checklt_ori = {
             "KEY": ("",True),
             "model": ("prompt",False),
             "version": ("latest",False)
+        },False),
+        "SIF": ({
+            "KEY": ("",True),
+            "model": ("prompt",False),
+            "version": ("normal",False)
         },False)
     },True)
 }

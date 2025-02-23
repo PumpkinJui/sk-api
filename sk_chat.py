@@ -166,22 +166,23 @@ def info_print(lt:list) -> None:
           The info list.
     Returns: None.
     """
-    k = 0
+    lt = [i.split('/')[1] if '/' in i else i for i in lt]
     max_len = max(len(i) for i in lt)
-    while k < len(lt):
-        # pylint: disable-next=expression-not-assigned
-        print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
-        k += 1
-    if k % 2 == 1:
-        print()
+    if max_len <= 18:
+        k = 0
+        while k < len(lt):
+            # pylint: disable-next=expression-not-assigned
+            print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
+            k += 1
+        if k % 2 == 1:
+            print()
+    else:
+        __ = [print('INF:',i) for i in lt]
 
 def sel_guess(chn:str,sel:str) -> bool:
     mdlist = ('deepseek','glm','qwen')
     sell = sel.split('-',1)
-    if sell[0] in mdlist:
-        selp = sell[1]
-    else:
-        selp = sel
+    selp = sell[1] if sell[0] in mdlist else sel
     # print(selp)
     if chn == selp:
         print(f'INF: Selection accepted: {sel}.')
@@ -223,6 +224,9 @@ def service_infoget(service:str) -> dict:
       - temp_range: dict
         The same as the above one; use it to override the service setting.
 
+    Root keys here can override the ones in conf (to avoid invalid usage),
+    and are overriden by the ones in models (to be more model-specific).
+
     Args:
         - service: str
           The service of which you want info.
@@ -236,49 +240,41 @@ def service_infoget(service:str) -> dict:
             'full_name': 'DeepSeek',
             'cht_url': 'https://api.deepseek.com/chat/completions',
             'chk_url': 'https://api.deepseek.com/user/balance',
+            'max_tokens': 8192,
             'temp_range': {
                 'max_temp': 2,
                 'default_temp': 1.00
             },
             'models': {
-                'deepseek-chat': {
-                    'max_tokens': 8192
-                },
-                'deepseek-reasoner': {
-                    'max_tokens': 8192
-                }
+                'deepseek-chat': {},
+                'deepseek-reasoner': {}
             }
         },
         'GLM': {
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+            'max_tokens': 4095,
             'temp_range': {
                 'max_temp': 1,
                 'default_temp': 0.95
             },
             'models': {
                 'glm-4-plus': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-4-air-0111': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-4-airx': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-4-flash': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-4-flashx': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-4-long': {
-                    'max_tokens': 4095,
                     'tools': glm_tools
                 },
                 'glm-zero-preview': {
@@ -287,9 +283,7 @@ def service_infoget(service:str) -> dict:
                 'codegeex-4': {
                     'max_tokens': 32768
                 },
-                'charglm-4': {
-                    'max_tokens': 4095
-                },
+                'charglm-4': {},
                 'emohaa': {
                     'max_tokens': 8192
                 }
@@ -358,6 +352,45 @@ def service_infoget(service:str) -> dict:
                     'max_tokens': 32768
                 },
                 'qwq-32b-preview': {}
+            }
+        },
+        'SIF': {
+            'full_name': 'SiliconFlow',
+            'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
+            'chk_url': 'https://api.siliconflow.cn/v1/user/info',
+            'max_tokens': 4096,
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 0.70
+            },
+            'models': {
+                'deepseek-ai/DeepSeek-R1': {
+                    'max_tokens': 8192
+                },
+                'deepseek-ai/DeepSeek-V3': {},
+                'deepseek-ai/DeepSeek-R1-Distill-Llama-8B': {
+                    'max_tokens': 16384
+                },
+                'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B': {
+                    'max_tokens': 16384
+                },
+                'meta-llama/Llama-3.3-70B-Instruct': {},
+                'meta-llama/Meta-Llama-3.1-8B-Instruct': {},
+                'Qwen/Qwen2.5-72B-Instruct-128K': {},
+                'Qwen/Qwen2.5-7B-Instruct': {},
+                'Qwen/Qwen2.5-Coder-32B-Instruct': {},
+                'Qwen/Qwen2.5-Coder-7B-Instruct': {},
+                'Qwen/QwQ-32B-Preview': {
+                    'max_tokens': 8192
+                },
+                'THUDM/glm-4-9b-chat': {},
+                'internlm/internlm2_5-20b-chat': {},
+                'internlm/internlm2_5-7b-chat': {},
+                'AIDC-AI/Marco-o1': {
+                    'max_tokens': 8192
+                },
+                'SeedLLM/Seed-Rice-7B': {},
+                'TeleAI/TeleChat2': {}
             }
         }
     }
@@ -705,7 +738,7 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('model') in ('deepseek-reasoner','deepseek-r1'):
+        if conf.get('model') in ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1'):
             print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
@@ -846,6 +879,12 @@ def balance_chk() -> str:
                 text['data']['available_balance'],
                 conf.get('full_name')
             )
+        if conf.get('full_name') == 'SiliconFlow':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} CNY left in the {} balance.'.format(
+                text['data']['totalBalance'],
+                conf.get('full_name')
+            )
     # pylint: disable-next=consider-using-f-string
     exitc('ERR: {} {}'.format(
         rsp.status_code,
@@ -853,7 +892,7 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if conf.get('model') not in ('deepseek-reasoner','deepseek-r1'):
+    if conf.get('model') not in ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1'):
         conf['temp'] = temp_get()
         conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
@@ -863,7 +902,8 @@ def chat() -> None:
         conf['msg'].append(usr_get())
         print(
             f'ASSISTANT #{conf.get("rnd")}'
-            if conf.get('model') not in ('deepseek-reasoner','deepseek-r1') else
+            if conf.get('model') not in \
+            ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1') else
             f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
