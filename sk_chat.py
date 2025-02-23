@@ -117,6 +117,13 @@ def conf_read() -> dict:
     conf_r['model'] = model_remap(conf_r.get('model'),conf_r.get('version'))
     __ = conf_r.pop('version',None)
     del conf_r['models'], conf_r['temp_range']
+    conf_r['reasoner'] = (
+        'deepseek-reasoner',
+        'deepseek-r1',
+        'deepseek-ai/DeepSeek-R1',
+        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
+        'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
+    )
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     # print(conf_r)
@@ -738,7 +745,7 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('model') in ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1'):
+        if conf.get('model') in conf.get('reasoner'):
             print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
@@ -810,6 +817,8 @@ def ast_stream() -> None:
 
 def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or delta == '':
+        if not conf['ast'] and delta.strip('\n') == '':
+            return
         conf['ast'] += delta
         if not conf.get('gocon') and \
            not delta_lt.get('reasoning_content') and delta_lt.get('content'):
@@ -892,7 +901,7 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if conf.get('model') not in ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1'):
+    if conf.get('model') not in conf.get('reasoner'):
         conf['temp'] = temp_get()
         conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
@@ -902,8 +911,7 @@ def chat() -> None:
         conf['msg'].append(usr_get())
         print(
             f'ASSISTANT #{conf.get("rnd")}'
-            if conf.get('model') not in \
-            ('deepseek-reasoner','deepseek-r1','deepseek-ai/DeepSeek-R1') else
+            if conf.get('model') not in conf.get('reasoner') else
             f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
