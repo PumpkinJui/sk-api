@@ -1,6 +1,6 @@
 from json import load
 from json.decoder import JSONDecodeError
-from types import MappingProxyType as MPT
+from types import MappingProxyType as mpt
 
 checklt_ori = {
     "stream": (True,False),
@@ -30,21 +30,14 @@ checklt_ori = {
     },True)
 }
 
-checklt = MPT(checklt_ori)
+checklt = mpt(checklt_ori)
 
 def conf_default(ref:dict=checklt) -> dict:
     default_conf = {}
     for m,n in ref.items():
-        if isinstance(n[0],dict):
-            q = conf_default(n[0])
-            if q:
-                default_conf[m] = q
-            else:
-                continue
-        else:
-            if n[1]:
-                continue
-            default_conf[m] = n[0]
+        if n[1] or isinstance(n[0],dict):
+            continue
+        default_conf[m] = n[0]
     return default_conf
 
 def conf_check(user_conf:dict,ref:dict) -> dict:
@@ -65,15 +58,16 @@ def conf_check(user_conf:dict,ref:dict) -> dict:
 
 # pylint: disable-next=dangerous-default-value
 def conf_merge(external_conf:dict,internal_conf:dict=conf_default(),ref:dict=checklt) -> dict:
-    if conf_required_check(external_conf,ref):
-        for m,n in external_conf.items():
-            if m not in internal_conf:
-                internal_conf[m] = n
-            elif isinstance(n,dict):
-                if not conf_merge(n,internal_conf.get(m),ref.get(m)[0]):
-                    return {}
-            else:
-                internal_conf[m] = n
+    dele = []
+    for m,n in external_conf.items():
+        if isinstance(n,dict) and not conf_merge(n,conf_default(ref.get(m)[0]),ref.get(m)[0]):
+            if not ref.get(m)[1]:
+                dele.append(m)
+                continue
+            return {}
+        internal_conf[m] = n
+    __ = [(internal_conf.pop(i,None),external_conf.pop(i,None)) for i in dele]
+    if conf_required_check(internal_conf,ref):
         return key_check(internal_conf)
         # return internal_conf
     return {}
@@ -87,9 +81,7 @@ def conf_required_check(required_conf:dict,ref:dict) -> dict:
 
 def key_check(key_conf:dict) -> dict: # specific
     if ser := key_conf.get('service'):
-        dele = [i for i in ser.keys() if ser.get(i) and not ser.get(i).get('KEY')]
-        __ = [key_conf['service'].pop(i) for i in dele]
-        for m,n in key_conf.get('service').items():
+        for m,n in ser.items():
             # print(m,n)
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
