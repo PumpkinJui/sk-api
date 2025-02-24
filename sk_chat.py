@@ -117,13 +117,13 @@ def conf_read() -> dict:
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range'))
     del conf_r['models'], conf_r['temp_range']
-    conf_r['reasoner'] = bool(conf_r.get('model') in (
+    conf_r['reasoner'] = conf_r.get('model') in {
         'deepseek-reasoner',
         'deepseek-r1',
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
-    ))
+    }
     conf_r = model_remap(conf_r)
     conf_r['msg'] = []
     conf_r['rnd'] = 0
@@ -460,7 +460,7 @@ def model_remap(remap_conf:dict) -> dict:
     if remap_conf.get('full_name') == 'SiliconFlow':
         model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         remap_conf['model'] = model
-        if model in ('Pro/deepseek-ai/DeepSeek-R1',):
+        if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
             remap_conf['max_tokens'] = 16384
         del remap_conf['pro']
         return remap_conf
@@ -495,13 +495,13 @@ def qwen_remap(model:str,ver:str) -> str:
     Returns:
         str: the remapped model.
     """
-    if model not in (
+    if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
         'qwen-coder-plus','qwen-coder-turbo'
-    ) or ver == 'stable':
+    } or ver == 'stable':
         return model
-    if ver not in ('stable','latest','oss'):
+    if ver not in {'stable','latest','oss'}:
         print(f'WRN: "{ver}" is not a valid version.')
         print('WRN: Fallback to "latest".')
         ver = 'latest'
@@ -523,7 +523,7 @@ def qwen_remap(model:str,ver:str) -> str:
     return model
 
 def sif_remap(model:str,pro:bool) -> str:
-    if model not in (
+    if model not in {
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
@@ -532,7 +532,7 @@ def sif_remap(model:str,pro:bool) -> str:
         'Qwen/Qwen2.5-7B-Instruct',
         'Qwen/Qwen2.5-Coder-7B-Instruct',
         'THUDM/glm-4-9b-chat'
-    ) or not pro:
+    } or not pro:
         return model
     model = 'Pro/' + model
     print(f'INF: Remap to {model}.')
@@ -611,11 +611,11 @@ def payload_gen() -> str:
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
         payload['meta'] = conf.get('meta')
-    elif conf.get('tool_use') and conf.get('model') in (
+    elif conf.get('tool_use') and conf.get('model') in {
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
         'qwen-turbo','qwen-turbo-latest'
-    ):
+    }:
         payload['enable_search'] = True
     payload_json = json.dumps(payload)
     # print(conf.get('msg'),payload_json,sep='\n')
