@@ -36,6 +36,8 @@ The function system structure: (arguments omitted)
     - glm_tools_gen()
     - kimi_tools_gen()
   - model_remap()
+    - qwen_remap()
+    - sif_remap()
 - Generator
   - token_gen()
   - headers_gen()
@@ -114,16 +116,15 @@ def conf_read() -> dict:
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range'))
-    conf_r['model'] = model_remap(conf_r.get('model'),conf_r.get('version'))
-    __ = conf_r.pop('version',None)
     del conf_r['models'], conf_r['temp_range']
-    conf_r['reasoner'] = (
+    conf_r['reasoner'] = bool(conf_r.get('model') in (
         'deepseek-reasoner',
         'deepseek-r1',
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
-    )
+    ))
+    conf_r = model_remap(conf_r)
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     # print(conf_r)
@@ -165,8 +166,10 @@ def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
 def info_print(lt:list) -> None:
     """Print info neatly.
 
-    Use space filling and tabs to align everything,
+    If everything is within 18 characters,
+    use space filling and tabs to align everything,
     and print them 2 per line (for the sake of narrow screens).
+    If not, just print them 1 per line.
 
     Args:
         - lt: list
@@ -449,8 +452,22 @@ def kimi_tools_gen() -> list:
     }]
     return tools
 
-def model_remap(model:str,ver:str) -> str:
-    """Remap models for QWEN.
+def model_remap(remap_conf:dict) -> dict:
+    if remap_conf.get('full_name') == 'ModelStudio':
+        remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
+        del remap_conf['version']
+        return remap_conf
+    if remap_conf.get('full_name') == 'SiliconFlow':
+        model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
+        remap_conf['model'] = model
+        if model in ('Pro/deepseek-ai/DeepSeek-R1',):
+            remap_conf['max_tokens'] = 16384
+        del remap_conf['pro']
+        return remap_conf
+    return remap_conf
+
+def qwen_remap(model:str,ver:str) -> str:
+    """QWEN-dedicated model remapper.
 
     Qwen has three types of models, roughly speaking.
 
@@ -463,8 +480,6 @@ def model_remap(model:str,ver:str) -> str:
 
     1. Check whether the selected model has a remap choice, or if ver is `stable`.
        If not, return directly.
-       It is convenient so we just apply this function globally
-       (and that's why it is not a 'dedicated' one).
     2. Check whether ver is a supported value.
        If not, print a warning message and assume it is `latest`.
     3. Check whether ver is `latest`.
@@ -504,6 +519,22 @@ def model_remap(model:str,ver:str) -> str:
         'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct'
     }
     model = oss_map.get(model)
+    print(f'INF: Remap to {model}.')
+    return model
+
+def sif_remap(model:str,pro:bool) -> str:
+    if model not in (
+        'deepseek-ai/DeepSeek-R1',
+        'deepseek-ai/DeepSeek-V3',
+        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
+        'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
+        'meta-llama/Meta-Llama-3.1-8B-Instruct',
+        'Qwen/Qwen2.5-7B-Instruct',
+        'Qwen/Qwen2.5-Coder-7B-Instruct',
+        'THUDM/glm-4-9b-chat'
+    ) or not pro:
+        return model
+    model = 'Pro/' + model
     print(f'INF: Remap to {model}.')
     return model
 
@@ -745,7 +776,7 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('model') in conf.get('reasoner'):
+        if conf.get('reasoner'):
             print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
@@ -817,8 +848,8 @@ def ast_stream() -> None:
 
 def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or delta == '':
-        if not conf['ast'] and delta.strip('\n') == '':
-            return
+        if not conf['ast'] and delta.lstrip('\n') != delta:
+            delta = delta.lstrip('\n')
         conf['ast'] += delta
         if not conf.get('gocon') and \
            not delta_lt.get('reasoning_content') and delta_lt.get('content'):
@@ -901,7 +932,7 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if conf.get('model') not in conf.get('reasoner'):
+    if not conf.get('reasoner'):
         conf['temp'] = temp_get()
         conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
@@ -911,7 +942,7 @@ def chat() -> None:
         conf['msg'].append(usr_get())
         print(
             f'ASSISTANT #{conf.get("rnd")}'
-            if conf.get('model') not in conf.get('reasoner') else
+            if not conf.get('reasoner') else
             f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
