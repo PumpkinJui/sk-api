@@ -366,8 +366,8 @@ def service_infoget(service:str) -> dict:
         },
         'SIF': {
             'full_name': 'SiliconFlow',
-            'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
-            'chk_url': 'https://api.siliconflow.cn/v1/user/info',
+            'cht_url': 'https://api.siliconflow.com/v1/chat/completions',
+            'chk_url': 'https://api.siliconflow.com/v1/user/info',
             'max_tokens': 4096,
             'temp_range': {
                 'max_temp': 2,
@@ -523,6 +523,24 @@ def qwen_remap(model:str,ver:str) -> str:
     return model
 
 def sif_remap(model:str,pro:bool) -> str:
+    """SIF-dedicated model remapper.
+
+    SIF has some 'Pro' models.
+    Although I don't understand the differences between non-Pro and Pro,
+    I write this function to add their support.
+
+    Check whether the selected model has a remap choice,
+    and if pro versions are wished to be used. If not, return directly.
+    Otherwise add a 'Pro/' prefix, print a remap message and return it.
+
+    Args:
+        - model: str
+          The model to be remapped.
+        - pro: bool
+          Whether or not Pro versions are wished to be used.
+    Returns:
+        str: the remapped model.
+    """
     if model not in {
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
