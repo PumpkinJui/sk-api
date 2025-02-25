@@ -32,10 +32,9 @@ The function system structure: (arguments omitted)
   - service_model()
     - info_print()
     - sel_guess()
-  - service_infoget()
-    - glm_tools_gen()
-    - kimi_tools_gen()
   - model_remap()
+    - qwen_remap()
+    - sif_remap()
 - Generator
   - token_gen()
   - headers_gen()
@@ -75,7 +74,7 @@ import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
 from jwt import encode # pass API KEY safely to supported services
-from sk_conf import conf_get # read `conf`
+from sk_conf import conf_get, service_infoget # read conf and provide services' info
 
 def exitc(reason:str='') -> None:
     """Halfway exit.
@@ -100,29 +99,45 @@ def conf_read() -> dict:
             pass
         exitc('TIP: Please check your conf file.')
     print()
-    service_conf = service_model('service',conf_r.get('service'),False)
+    service_conf = service_model('service',conf_r.get('service'))
     service_info = service_infoget(service_conf.get('service'))
     conf_r.update(service_info)
     conf_r.update(service_conf)
     del conf_r['service']
     print()
+    try:
+        model_hidden_set = set(conf_r.get('prompt_control').get('hidden_models'))
+    except TypeError:
+        exitc('ERR: Invalid prompt_control.hidden_models.')
+    model_display = {
+        m: n for m, n in service_info.get('models').items()
+        if m not in model_hidden_set
+    }
     model_info = service_model(
         'model',
-        service_info.get('models'),
-        True,
+        model_display,
         service_conf.get('model','prompt')
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range'))
-    conf_r['model'] = model_remap(conf_r.get('model'),conf_r.get('version'))
-    __ = conf_r.pop('version',None)
     del conf_r['models'], conf_r['temp_range']
+    conf_r['reasoner'] = conf_r.get('model') in {
+        'deepseek-reasoner',
+        'deepseek-r1',
+        'deepseek-ai/DeepSeek-R1',
+        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
+        'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
+    }
+    conf_r = model_remap(conf_r)
+    nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
+    for i in nested:
+        conf_r.update(conf_r.pop(i))
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     # print(conf_r)
     return conf_r
 
-def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
+def service_model(keyword:str,lst:dict,sts:str='prompt') -> str:
     lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
@@ -138,18 +153,13 @@ def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
         info_print(lt)
         while True:
             chn = input('REQ: ')
-            chn = chn.lower() if lower else chn.upper()
+            chn = chn.strip().lower()
             if not chn:
                 pass
-            elif chn in lt:
-                print(f'INF: Selection accepted: {chn}.')
-                lst[chn][keyword] = chn
-                return lst[chn]
-            else:
-                for i in lt:
-                    if sel_guess(chn.strip(),i):
-                        lst[i][keyword] = i
-                        return lst[i]
+            for i in lt:
+                if sel_guess(chn,i):
+                    lst[i][keyword] = i
+                    return lst[i]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     lst[lt[0]][keyword] = lt[0]
@@ -158,32 +168,36 @@ def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
 def info_print(lt:list) -> None:
     """Print info neatly.
 
-    Use space filling and tabs to align everything,
+    If everything is within 18 characters,
+    use space filling and tabs to align everything,
     and print them 2 per line (for the sake of narrow screens).
+    If not, just print them 1 per line.
 
     Args:
         - lt: list
           The info list.
     Returns: None.
     """
-    k = 0
+    lt = [i.split('/')[1] if '/' in i else i for i in lt]
     max_len = max(len(i) for i in lt)
-    while k < len(lt):
-        # pylint: disable-next=expression-not-assigned
-        print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
-        k += 1
-    if k % 2 == 1:
-        print()
+    if max_len <= 18:
+        k = 0
+        while k < len(lt):
+            # pylint: disable-next=expression-not-assigned
+            print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
+            k += 1
+        if k % 2 == 1:
+            print()
+    else:
+        __ = [print('INF:',i) for i in lt]
 
 def sel_guess(chn:str,sel:str) -> bool:
     mdlist = ('deepseek','glm','qwen')
-    sell = sel.split('-',1)
-    if sell[0] in mdlist:
-        selp = sell[1]
-    else:
-        selp = sel
+    seld = sel.split('/',1)[1].lower() if '/' in sel else sel.lower()
+    sell = seld.split('-',1)
+    selp = sell[1] if '-' in seld and sell[0] in mdlist else seld
     # print(selp)
-    if chn == selp:
+    if chn in {sel.lower(),selp}:
         print(f'INF: Selection accepted: {sel}.')
         return True
     if chn in selp:
@@ -191,226 +205,22 @@ def sel_guess(chn:str,sel:str) -> bool:
         return True
     return False
 
-def service_infoget(service:str) -> dict:
-    """Provide services' info.
+def model_remap(remap_conf:dict) -> dict:
+    if remap_conf.get('full_name') == 'ModelStudio':
+        remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
+        del remap_conf['version']
+        return remap_conf
+    if remap_conf.get('full_name') == 'SiliconFlow':
+        model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
+        remap_conf['model'] = model
+        if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
+            remap_conf['max_tokens'] = 16384
+        del remap_conf['pro']
+        return remap_conf
+    return remap_conf
 
-    Generate tools from other functions first to reduce time-consuming function calling
-    (they might be use more than once).
-    Then all supported services, models and other info are listed.
-    For every service, the following keys are provided:
-
-    - full_name: str
-      To simplify the selecting process, the name is usually an abbr.
-      So this value is used to call the service rather formally.
-    - cht_url: str
-      CHaT URL.
-    - chk_url: str
-      balance CHecK URL. Omit it for unsupported ones.
-    - temp_range: dict
-      - max_temp: int
-        The min temp is always 0.
-      - default_temp: float
-        x.xx
-      - no_max: bool
-        If the max temp is not allowed, set to True. Otherwise omitted.
-    - models: dict
-      - max_tokens: int
-        The max_tokens to be passed.
-        If docs don't mention it at all, or mark the max as default, then omit it.
-      - tools: list
-        The usable tools. Usually the web search one.
-        If there is none, omit it.
-      - temp_range: dict
-        The same as the above one; use it to override the service setting.
-
-    Args:
-        - service: str
-          The service of which you want info.
-    Returns:
-        dict: the info of the specified service.
-    """
-    glm_tools = glm_tools_gen()
-    kimi_tools = kimi_tools_gen()
-    info = {
-        'DS': {
-            'full_name': 'DeepSeek',
-            'cht_url': 'https://api.deepseek.com/chat/completions',
-            'chk_url': 'https://api.deepseek.com/user/balance',
-            'temp_range': {
-                'max_temp': 2,
-                'default_temp': 1.00
-            },
-            'models': {
-                'deepseek-chat': {
-                    'max_tokens': 8192
-                },
-                'deepseek-reasoner': {
-                    'max_tokens': 8192
-                }
-            }
-        },
-        'GLM': {
-            'full_name': 'ChatGLM',
-            'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-            'temp_range': {
-                'max_temp': 1,
-                'default_temp': 0.95
-            },
-            'models': {
-                'glm-4-plus': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-4-air-0111': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-4-airx': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-4-flash': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-4-flashx': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-4-long': {
-                    'max_tokens': 4095,
-                    'tools': glm_tools
-                },
-                'glm-zero-preview': {
-                    'max_tokens': 15360
-                },
-                'codegeex-4': {
-                    'max_tokens': 32768
-                },
-                'charglm-4': {
-                    'max_tokens': 4095
-                },
-                'emohaa': {
-                    'max_tokens': 8192
-                }
-            }
-        },
-        'KIMI': {
-            'full_name': 'Moonshot',
-            'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
-            'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
-            'temp_range': {
-                'max_temp': 1,
-                'default_temp': 0.30
-            },
-            'models': {
-                'moonshot-v1-auto': {
-                    'tools': kimi_tools
-                },
-                'kimi-latest': {
-                    'tools': kimi_tools
-                }
-            }
-        },
-        'QWEN': {
-            'full_name': 'ModelStudio',
-            'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-            'temp_range': {
-                'max_temp': 2,
-                'default_temp': 0.70,
-                'no_max': True
-            },
-            'models': {
-                'qwen-max': {},
-                'qwen-plus': {},
-                'qwen-turbo': {},
-                'qwen-long': {
-                    'temp_range': {
-                        'max_temp': 2,
-                        'default_temp': 1.00,
-                        'no_max': True
-                    }
-                },
-                'qwen-math-plus': {
-                    'temp_range': {
-                        'max_temp': 2,
-                        'default_temp': 0.00,
-                        'no_max': True
-                    }
-                },
-                'qwen-math-turbo': {
-                    'temp_range': {
-                        'max_temp': 2,
-                        'default_temp': 0.00,
-                        'no_max': True
-                    }
-                },
-                'qwen-coder-plus': {},
-                'qwen-coder-turbo': {},
-                'deepseek-v3': {
-                    'max_tokens': 8192,
-                    'temp_range': {
-                        'max_temp': 2,
-                        'default_temp': 1.00
-                    }
-                },
-                'deepseek-r1': {
-                    'max_tokens': 32768
-                },
-                'qwq-32b-preview': {}
-            }
-        }
-    }
-    sinfo = info.get(service)
-    return sinfo
-
-def glm_tools_gen() -> list:
-    """GLM-dedicated tools generator.
-
-    Generate a search prompt first to control searching performance and
-    display the using of tools (although not always useful). Then generate tools.
-
-    Args: None.
-    Returns:
-        list: the GLM tools.
-        Dead return.
-    """
-    search_prompt = '\n'.join([
-        '','',
-        '## 来自互联网的信息','',
-        '{search_result}','',
-        '## 要求','',
-        '根据最新发布的信息回答用户问题。','',
-        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
-        ''
-    ])
-    tools = [{
-        "type": "web_search",
-        "web_search": {
-            "enable": True,
-            "search_prompt": search_prompt
-        }
-    }]
-    return tools
-
-def kimi_tools_gen() -> list:
-    """Kimi-dedicated tools generator.
-
-    Args: None.
-    Returns:
-        list: the Kimi tools.
-        Dead return.
-    """
-    tools = [{
-        "type": "builtin_function",
-        "function": {
-            "name": "$web_search",
-        }
-    }]
-    return tools
-
-def model_remap(model:str,ver:str) -> str:
-    """Remap models for QWEN.
+def qwen_remap(model:str,ver:str) -> str:
+    """QWEN-dedicated model remapper.
 
     Qwen has three types of models, roughly speaking.
 
@@ -423,8 +233,6 @@ def model_remap(model:str,ver:str) -> str:
 
     1. Check whether the selected model has a remap choice, or if ver is `stable`.
        If not, return directly.
-       It is convenient so we just apply this function globally
-       (and that's why it is not a 'dedicated' one).
     2. Check whether ver is a supported value.
        If not, print a warning message and assume it is `latest`.
     3. Check whether ver is `latest`.
@@ -440,13 +248,13 @@ def model_remap(model:str,ver:str) -> str:
     Returns:
         str: the remapped model.
     """
-    if model not in (
+    if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
         'qwen-coder-plus','qwen-coder-turbo'
-    ) or ver == 'stable':
+    } or ver == 'stable':
         return model
-    if ver not in ('stable','latest','oss'):
+    if ver not in {'stable','latest','oss'}:
         print(f'WRN: "{ver}" is not a valid version.')
         print('WRN: Fallback to "latest".')
         ver = 'latest'
@@ -464,6 +272,40 @@ def model_remap(model:str,ver:str) -> str:
         'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct'
     }
     model = oss_map.get(model)
+    print(f'INF: Remap to {model}.')
+    return model
+
+def sif_remap(model:str,pro:bool) -> str:
+    """SIF-dedicated model remapper.
+
+    SIF has some 'Pro' models.
+    Although I don't understand the differences between non-Pro and Pro,
+    I write this function to add their support.
+
+    Check whether the selected model has a remap choice,
+    and if pro versions are wished to be used. If not, return directly.
+    Otherwise add a 'Pro/' prefix, print a remap message and return it.
+
+    Args:
+        - model: str
+          The model to be remapped.
+        - pro: bool
+          Whether or not Pro versions are wished to be used.
+    Returns:
+        str: the remapped model.
+    """
+    if model not in {
+        'deepseek-ai/DeepSeek-R1',
+        'deepseek-ai/DeepSeek-V3',
+        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
+        'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
+        'meta-llama/Meta-Llama-3.1-8B-Instruct',
+        'Qwen/Qwen2.5-7B-Instruct',
+        'Qwen/Qwen2.5-Coder-7B-Instruct',
+        'THUDM/glm-4-9b-chat'
+    } or not pro:
+        return model
+    model = 'Pro/' + model
     print(f'INF: Remap to {model}.')
     return model
 
@@ -540,11 +382,11 @@ def payload_gen() -> str:
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
         payload['meta'] = conf.get('meta')
-    elif conf.get('tool_use') and conf.get('model') in (
+    elif conf.get('tool_use') and conf.get('model') in {
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
         'qwen-turbo','qwen-turbo-latest'
-    ):
+    }:
         payload['enable_search'] = True
     payload_json = json.dumps(payload)
     # print(conf.get('msg'),payload_json,sep='\n')
@@ -705,7 +547,7 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('model') in ('deepseek-reasoner','deepseek-r1'):
+        if conf.get('reasoner'):
             print(choices['message']['reasoning_content'])
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
@@ -777,6 +619,8 @@ def ast_stream() -> None:
 
 def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or delta == '':
+        if not conf['ast'] and delta.lstrip('\n') != delta:
+            delta = delta.lstrip('\n')
         conf['ast'] += delta
         if not conf.get('gocon') and \
            not delta_lt.get('reasoning_content') and delta_lt.get('content'):
@@ -846,6 +690,12 @@ def balance_chk() -> str:
                 text['data']['available_balance'],
                 conf.get('full_name')
             )
+        if conf.get('full_name') == 'SiliconFlow':
+            # pylint: disable-next=consider-using-f-string
+            return 'INF: {} CNY left in the {} balance.'.format(
+                text['data']['totalBalance'],
+                conf.get('full_name')
+            )
     # pylint: disable-next=consider-using-f-string
     exitc('ERR: {} {}'.format(
         rsp.status_code,
@@ -853,8 +703,9 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if conf.get('model') not in ('deepseek-reasoner','deepseek-r1'):
+    if conf.get('show_temp') and not conf.get('reasoner'):
         conf['temp'] = temp_get()
+    if conf.get('show_system') and not conf.get('reasoner'):
         conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
         conf['meta'] = emohaa_meta_get()
@@ -863,7 +714,7 @@ def chat() -> None:
         conf['msg'].append(usr_get())
         print(
             f'ASSISTANT #{conf.get("rnd")}'
-            if conf.get('model') not in ('deepseek-reasoner','deepseek-r1') else
+            if not conf.get('reasoner') else
             f'ASSISTANT REASONING #{conf.get("rnd")}'
         )
         # pylint: disable-next=expression-not-assigned
@@ -872,12 +723,9 @@ def chat() -> None:
 try:
     conf = conf_read()
     print()
-    if conf.get('balance_chk'):
-        print(
-            balance_chk() if conf.get('chk_url')
-            else f'WRN: Balance check is unsupported for {conf.get("full_name")}.'
-        )
-    print()
+    if conf.get('balance_chk') and conf.get('chk_url'):
+        print(balance_chk())
+        print()
     # print(payload_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()
