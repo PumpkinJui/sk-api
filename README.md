@@ -42,13 +42,15 @@
 
 ### 开始使用
 
-1. 申请 API KEY。一般会提供有效期不定的体验金。
-   - [DeepSeek Platform](https://platform.deepseek.com/api_keys)
-   - [BigModel Platform](https://bigmodel.cn/usercenter/apikeys)
-   - [Moonshot Platform](https://platform.moonshot.cn/console/api-keys)
-   - [Bailian Console](https://bailian.console.aliyun.com/?apiKey=1#/api-key)
+1. 申请 API KEY。一般会提供有效期不定的体验金。更多指导见：[我该用哪款服务？](which_to_use.md)
 2. 自版本 1.1.1 开始，我们在 Releases 页面提供示例配置文件。将 API KEY 填入示例 `sk.json` 文件中对应服务的 `ENTER_YOUR_KEY` 所在位置，并把用不上的删除；如果不删会有多余的报错，但不影响使用。
-3. 启动程序。如果你填入了多个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。
+3. 启动程序。如果你填入了多个服务的 KEY，将需要选择使用哪个服务。然后，选择使用的模型。  
+   为了避免重名，简化选择机制，服务名称使用简称。下文亦可能使用这些作为简称。它们是：
+   - DS：DeepSeek，深度求索
+   - GLM：ChatGLM / BigModel，智谱
+   - KIMI：Moonshot Kimi，月之暗面
+   - QWEN：Qwen / Model Studio，阿里百炼
+   - SIF：SiliconFlow，硅基流动
 4. 输入 Temperature。以下简要信息限于「不会报错」。  
    - 因为设了也没有作用，deepseek-reasoner 不展示此条。
    - 温度数值越低，对于相同的输入，输出越稳定；越高则相反，但设置过高可能出现乱码等情况。
@@ -176,16 +178,23 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 - `stream`：`bool`。设定为 `true` 时，进行流式输出，`false` 反之。  
   选填项，默认为 `true`。
-- `balance_chk`：`bool`。设定为 `true` 时，查询账户余额后再进行对话；`false` 直接进行对话，不查询余额。  
-  选填项，默认为 `true`。
-- `long_prompt`：`bool`。设定为 `true` 时，需要两个空行 (三次回车) 才能触发下一步；`false` 仅需一个空行 (两次回车)。  
-  适用于粘贴大段中间有空行的内容。影响系统提示词和用户提示词。  
-  选填项，默认为 `false`。
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
   选填项，默认为 `true`。
 - `autotime`：`bool`。设定为 `true` 时，自动在系统提示词中追加当前 UTC 时间，格式为 `%Y-%m-%d %H:%M:%S`；`false` 禁用。  
   开启后，可能触发意想不到的回复 (特别是 `deepseek-reasoner` 模型)。  
   选填项，默认为 `true`。
+- `prompt_control`：`dict`。配置输出控制。选填项。
+  - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额后再进行对话；`false` 直接进行对话，不查询余额。  
+  选填项，默认为 `true`。
+  - `long_prompt`：`bool`。设定为 `true` 时，需要两个空行 (三次回车) 才能触发下一步；`false` 仅需一个空行 (两次回车)。  
+    适用于粘贴大段中间有空行的内容。影响系统提示词和用户提示词。  
+    选填项，默认为 `false`。
+  - `show_temp`：`bool`。设定为 `true` 时提示设置温度，`false` 不提示。此项不影响 `reasoner`。  
+    选填项，默认为 `true`。
+  - `show_system`：`bool`。设定为 `true` 时提示设置系统提示词，`false` 不提示。  
+    选填项，默认为 `true`。
+  - `hidden_models`：`list`。将模型全称区分大小写地填入其中，填写的模型将不会在询问时展示；该列表对全部服务适用。模型名称请以选择成功时的提示结果为准，不要以选择列表或重映射信息为准。  
+    选填项，默认为 `[]`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DS`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
@@ -239,6 +248,30 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - latest
       - stable
       - oss
+  - `SIF`：`dict`。配置 SiliconFlow 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - DeepSeek-R1
+      - DeepSeek-V3
+      - DeepSeek-R1-Distill-Llama-8B
+      - DeepSeek-R1-Distill-Qwen-7B
+      - Llama-3.3-70B-Instruct
+      - Meta-Llama-3.1-8B-Instruct
+      - Qwen2.5-72B-Instruct-128K
+      - Qwen2.5-7B-Instruct
+      - Qwen2.5-Coder-32B-Instruct
+      - Qwen2.5-Coder-7B-Instruct
+      - QwQ-32B-Preview
+      - glm-4-9b-chat
+      - internlm2_5-20b-chat
+      - internlm2_5-7b-chat
+      - Marco-o1
+      - Seed-Rice-7B
+      - TeleChat2
+    - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
+      选填项，默认为 `false`。
 
 </details>
 </details>
@@ -252,8 +285,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - [ ] KEY：
       - [ ] 加密存储
       - [ ] 多个 KEY，分压
-- [ ] 减少输出内容。(可能需要增加配置项)
-- [ ] 添加配置：部分选项直接设为默认或配置值
+- [x] 添加配置：部分选项直接设为默认或配置值
 - [ ] 将 README 中的一些操作说明作为 `TIP` 加入主程序中 (可能需要增加配置项)
 - [ ] 将 README 中的函数介绍内嵌
 - [ ] 截断/触发限流自动继续 (需考虑如何处理 DeepSeek 目前的繁忙状态)
@@ -273,4 +305,5 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - [DeepSeek API Docs](https://api-docs.deepseek.com/zh-cn/)
 - [BigModel API Docs](https://bigmodel.cn/dev/welcome)
 - [Kimi API Docs](https://platform.moonshot.cn/docs/intro)
-- [Qwen API Docs](https://help.aliyun.com/zh/model-studio/)
+- [ModelStudio API Docs](https://help.aliyun.com/zh/model-studio/)
+- [SiliconFlow API Docs](https://docs.siliconflow.cn/cn/userguide/introduction)
