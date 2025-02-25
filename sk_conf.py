@@ -10,7 +10,8 @@ checklt_ori = {
         "balance_chk": (True, False),
         "long_prompt": (False, False),
         "show_temp": (True, False),
-        "show_system": (True, False)
+        "show_system": (True, False),
+        "hidden_models": ([], False)
     }, False),
     "service": ({
         "DS": ({
@@ -116,5 +117,259 @@ def conf_get(conf_file:str) -> dict:
         print('INF: Applying default configurations...')
         return conf_merge(conf_default())
     return conf_merge(conf_check(user_conf,checklt))
+
+def service_infoget(service:str) -> dict:
+    """Provide services' info.
+
+    Generate tools from other functions first to reduce time-consuming function calling
+    (they might be use more than once).
+    Then all supported services, models and other info are listed.
+    For every service, the following keys are provided:
+
+    - full_name: str
+      To simplify the selecting process, the name is usually an abbr.
+      So this value is used to call the service rather formally.
+    - cht_url: str
+      CHaT URL.
+    - chk_url: str
+      balance CHecK URL. Omit it for unsupported ones.
+    - temp_range: dict
+      - max_temp: int
+        The min temp is always 0.
+      - default_temp: float
+        x.xx
+      - no_max: bool
+        If the max temp is not allowed, set to True. Otherwise omitted.
+    - models: dict
+      - max_tokens: int
+        The max_tokens to be passed.
+        If docs don't mention it at all, or mark the max as default, then omit it.
+      - tools: list
+        The usable tools. Usually the web search one.
+        If there is none, omit it.
+      - temp_range: dict
+        The same as the above one; use it to override the service setting.
+
+    Root keys here can override the ones in conf (to avoid invalid usage),
+    and are overriden by the ones in models (to be more model-specific).
+
+    Dependency tree:
+        - service_infoget()
+            - glm_tools_gen()
+            - kimi_tools_gen()
+    Args:
+        - service: str
+          The service of which you want info.
+    Returns:
+        dict: the info of the specified service.
+    """
+    glm_tools = glm_tools_gen()
+    kimi_tools = kimi_tools_gen()
+    info = {
+        'DS': {
+            'full_name': 'DeepSeek',
+            'cht_url': 'https://api.deepseek.com/chat/completions',
+            'chk_url': 'https://api.deepseek.com/user/balance',
+            'max_tokens': 8192,
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 1.00
+            },
+            'models': {
+                'deepseek-chat': {},
+                'deepseek-reasoner': {}
+            }
+        },
+        'GLM': {
+            'full_name': 'ChatGLM',
+            'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+            'max_tokens': 4095,
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.95
+            },
+            'models': {
+                'glm-4-plus': {
+                    'tools': glm_tools
+                },
+                'glm-4-air-0111': {
+                    'tools': glm_tools
+                },
+                'glm-4-airx': {
+                    'tools': glm_tools
+                },
+                'glm-4-flash': {
+                    'tools': glm_tools
+                },
+                'glm-4-flashx': {
+                    'tools': glm_tools
+                },
+                'glm-4-long': {
+                    'tools': glm_tools
+                },
+                'glm-zero-preview': {
+                    'max_tokens': 15360
+                },
+                'codegeex-4': {
+                    'max_tokens': 32768
+                },
+                'charglm-4': {},
+                'emohaa': {
+                    'max_tokens': 8192
+                }
+            }
+        },
+        'KIMI': {
+            'full_name': 'Moonshot',
+            'cht_url': 'https://api.moonshot.cn/v1/chat/completions',
+            'chk_url': 'https://api.moonshot.cn/v1/users/me/balance',
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.30
+            },
+            'models': {
+                'moonshot-v1-auto': {
+                    'tools': kimi_tools
+                },
+                'kimi-latest': {
+                    'tools': kimi_tools
+                }
+            }
+        },
+        'QWEN': {
+            'full_name': 'ModelStudio',
+            'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 0.70,
+                'no_max': True
+            },
+            'models': {
+                'qwen-max': {},
+                'qwen-plus': {},
+                'qwen-turbo': {},
+                'qwen-long': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 1.00,
+                        'no_max': True
+                    }
+                },
+                'qwen-math-plus': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.00,
+                        'no_max': True
+                    }
+                },
+                'qwen-math-turbo': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.00,
+                        'no_max': True
+                    }
+                },
+                'qwen-coder-plus': {},
+                'qwen-coder-turbo': {},
+                'deepseek-v3': {
+                    'max_tokens': 8192,
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 1.00
+                    }
+                },
+                'deepseek-r1': {
+                    'max_tokens': 32768
+                },
+                'qwq-32b-preview': {}
+            }
+        },
+        'SIF': {
+            'full_name': 'SiliconFlow',
+            'cht_url': 'https://api.siliconflow.com/v1/chat/completions',
+            'chk_url': 'https://api.siliconflow.com/v1/user/info',
+            'max_tokens': 4096,
+            'temp_range': {
+                'max_temp': 2,
+                'default_temp': 0.70
+            },
+            'models': {
+                'deepseek-ai/DeepSeek-R1': {
+                    'max_tokens': 8192
+                },
+                'deepseek-ai/DeepSeek-V3': {},
+                'deepseek-ai/DeepSeek-R1-Distill-Llama-8B': {
+                    'max_tokens': 16384
+                },
+                'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B': {
+                    'max_tokens': 16384
+                },
+                'meta-llama/Llama-3.3-70B-Instruct': {},
+                'meta-llama/Meta-Llama-3.1-8B-Instruct': {},
+                'Qwen/Qwen2.5-72B-Instruct-128K': {},
+                'Qwen/Qwen2.5-7B-Instruct': {},
+                'Qwen/Qwen2.5-Coder-32B-Instruct': {},
+                'Qwen/Qwen2.5-Coder-7B-Instruct': {},
+                'Qwen/QwQ-32B-Preview': {
+                    'max_tokens': 8192
+                },
+                'THUDM/glm-4-9b-chat': {},
+                'internlm/internlm2_5-20b-chat': {},
+                'internlm/internlm2_5-7b-chat': {},
+                'AIDC-AI/Marco-o1': {
+                    'max_tokens': 8192
+                },
+                'SeedLLM/Seed-Rice-7B': {},
+                'TeleAI/TeleChat2': {}
+            }
+        }
+    }
+    sinfo = info.get(service)
+    return sinfo
+
+def glm_tools_gen() -> list:
+    """GLM-dedicated tools generator.
+
+    Generate a search prompt first to control searching performance and
+    display the using of tools (although not always useful). Then generate tools.
+
+    Args: None.
+    Returns:
+        list: the GLM tools.
+        Dead return.
+    """
+    search_prompt = '\n'.join([
+        '','',
+        '## 来自互联网的信息','',
+        '{search_result}','',
+        '## 要求','',
+        '根据最新发布的信息回答用户问题。','',
+        '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
+        ''
+    ])
+    tools = [{
+        "type": "web_search",
+        "web_search": {
+            "enable": True,
+            "search_prompt": search_prompt
+        }
+    }]
+    return tools
+
+def kimi_tools_gen() -> list:
+    """Kimi-dedicated tools generator.
+
+    Args: None.
+    Returns:
+        list: the Kimi tools.
+        Dead return.
+    """
+    tools = [{
+        "type": "builtin_function",
+        "function": {
+            "name": "$web_search",
+        }
+    }]
+    return tools
 
 # print(conf_get('sk.json'))
