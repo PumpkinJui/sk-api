@@ -124,6 +124,9 @@ def conf_read() -> dict:
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
     }
     conf_r = model_remap(conf_r)
+    nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
+    for i in nested:
+        conf_r.update(conf_r.pop(i))
     conf_r['msg'] = []
     conf_r['rnd'] = 0
     # print(conf_r)
@@ -945,8 +948,9 @@ def balance_chk() -> str:
     ))
 
 def chat() -> None:
-    if not conf.get('reasoner'):
+    if conf.get('show_temp') and not conf.get('reasoner'):
         conf['temp'] = temp_get()
+    if conf.get('show_system') and not conf.get('reasoner'):
         conf['msg'].append(system_get())
     if conf.get('model') == 'emohaa':
         conf['meta'] = emohaa_meta_get()
@@ -964,12 +968,9 @@ def chat() -> None:
 try:
     conf = conf_read()
     print()
-    if conf.get('balance_chk'):
-        print(
-            balance_chk() if conf.get('chk_url')
-            else f'WRN: Balance check is unsupported for {conf.get("full_name")}.'
-        )
-    print()
+    if conf.get('balance_chk') and conf.get('chk_url'):
+        print(balance_chk())
+        print()
     # print(payload_gen([],0,False))
     # exitc('INF: Debug Exit.')
     chat()

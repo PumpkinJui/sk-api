@@ -3,36 +3,40 @@ from json.decoder import JSONDecodeError
 from types import MappingProxyType as mpt
 
 checklt_ori = {
-    "stream": (True,False),
-    "balance_chk": (True,False),
-    "long_prompt": (False,False),
-    "tool_use": (True,False),
-    "autotime": (True,False),
+    "stream": (True, False),
+    "tool_use": (True, False),
+    "autotime": (True, False),
+    "prompt_control": ({
+        "balance_chk": (True, False),
+        "long_prompt": (False, False),
+        "show_temp": (True, False),
+        "show_system": (True, False)
+    }, False),
     "service": ({
         "DS": ({
-            "KEY": ("",True),
-            "model": ("prompt",False)
-        },False),
+            "KEY": ("", True),
+            "model": ("prompt", False)
+        }, False),
         "GLM": ({
-            "KEY": ("",True),
-            "model": ("prompt",False),
-            "jwt": (True,False)
-        },False),
+            "KEY": ("", True),
+            "model": ("prompt", False),
+            "jwt": (True, False)
+        }, False),
         "KIMI": ({
-            "KEY": ("",True),
-            "model": ("prompt",False)
-        },False),
+            "KEY": ("", True),
+            "model": ("prompt", False)
+        }, False),
         "QWEN": ({
-            "KEY": ("",True),
-            "model": ("prompt",False),
-            "version": ("latest",False)
-        },False),
+            "KEY": ("", True),
+            "model": ("prompt", False),
+            "version": ("latest", False)
+        }, False),
         "SIF": ({
-            "KEY": ("",True),
-            "model": ("prompt",False),
-            "pro": (False,False)
-        },False)
-    },True)
+            "KEY": ("", True),
+            "model": ("prompt", False),
+            "pro": (False, False)
+        }, False)
+    }, True)
 }
 
 checklt = mpt(checklt_ori)
