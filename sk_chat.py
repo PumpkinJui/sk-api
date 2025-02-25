@@ -102,7 +102,7 @@ def conf_read() -> dict:
             pass
         exitc('TIP: Please check your conf file.')
     print()
-    service_conf = service_model('service',conf_r.get('service'),False)
+    service_conf = service_model('service',conf_r.get('service'))
     service_info = service_infoget(service_conf.get('service'))
     conf_r.update(service_info)
     conf_r.update(service_conf)
@@ -111,7 +111,6 @@ def conf_read() -> dict:
     model_info = service_model(
         'model',
         service_info.get('models'),
-        True,
         service_conf.get('model','prompt')
     )
     conf_r.update(model_info)
@@ -130,7 +129,7 @@ def conf_read() -> dict:
     # print(conf_r)
     return conf_r
 
-def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
+def service_model(keyword:str,lst:dict,sts:str='prompt') -> str:
     lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
@@ -146,18 +145,13 @@ def service_model(keyword:str,lst:dict,lower:bool=True,sts:str='prompt') -> str:
         info_print(lt)
         while True:
             chn = input('REQ: ')
-            chn = chn.lower() if lower else chn.upper()
+            chn = chn.strip().lower()
             if not chn:
                 pass
-            elif chn in lt:
-                print(f'INF: Selection accepted: {chn}.')
-                lst[chn][keyword] = chn
-                return lst[chn]
-            else:
-                for i in lt:
-                    if sel_guess(chn.strip(),i):
-                        lst[i][keyword] = i
-                        return lst[i]
+            for i in lt:
+                if sel_guess(chn,i):
+                    lst[i][keyword] = i
+                    return lst[i]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     lst[lt[0]][keyword] = lt[0]
@@ -191,10 +185,11 @@ def info_print(lt:list) -> None:
 
 def sel_guess(chn:str,sel:str) -> bool:
     mdlist = ('deepseek','glm','qwen')
-    sell = sel.split('-',1)
-    selp = sell[1] if sell[0] in mdlist else sel
+    seld = sel.split('/',1)[1].lower() if '/' in sel else sel.lower()
+    sell = seld.split('-',1)
+    selp = sell[1] if '-' in seld and sell[0] in mdlist else seld
     # print(selp)
-    if chn == selp:
+    if chn in {sel.lower(),selp}:
         print(f'INF: Selection accepted: {sel}.')
         return True
     if chn in selp:
