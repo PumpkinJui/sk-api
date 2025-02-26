@@ -4,7 +4,7 @@
 [![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
 ![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=python&logoColor=white&color=477DB2)
 
-![GitHub Release: The lastest release name.](https://img.shields.io/github/v/release/PumpkinJui/sk-api?display_name=tag&style=for-the-badge&color=limegreen)
+![GitHub Release: The latest release name.](https://img.shields.io/github/v/release/PumpkinJui/sk-api?display_name=tag&style=for-the-badge&color=limegreen)
 ![GitHub Actions Workflow Status: Building status.](https://img.shields.io/github/actions/workflow/status/PumpkinJui/sk-api/build.yml?style=for-the-badge)
 
 [![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
@@ -253,23 +253,23 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
     - `model`：`str`。选择使用的模型。  
       选填项，默认为 `prompt`。可选项包括：
       - prompt
-      - DeepSeek-R1
-      - DeepSeek-V3
-      - DeepSeek-R1-Distill-Llama-8B
-      - DeepSeek-R1-Distill-Qwen-7B
-      - Llama-3.3-70B-Instruct
-      - Meta-Llama-3.1-8B-Instruct
-      - Qwen2.5-72B-Instruct-128K
-      - Qwen2.5-7B-Instruct
-      - Qwen2.5-Coder-32B-Instruct
-      - Qwen2.5-Coder-7B-Instruct
-      - QwQ-32B-Preview
-      - glm-4-9b-chat
-      - internlm2_5-20b-chat
-      - internlm2_5-7b-chat
-      - Marco-o1
-      - Seed-Rice-7B
-      - TeleChat2
+      - deepseek-ai/DeepSeek-R1
+      - deepseek-ai/DeepSeek-V3
+      - deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+      - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+      - meta-llama/Llama-3.3-70B-Instruct
+      - meta-llama/Meta-Llama-3.1-8B-Instruct
+      - Qwen/Qwen2.5-72B-Instruct-128K
+      - Qwen/Qwen2.5-7B-Instruct
+      - Qwen/Qwen2.5-Coder-32B-Instruct
+      - Qwen/Qwen2.5-Coder-7B-Instruct
+      - Qwen/QwQ-32B-Preview
+      - THUDM/glm-4-9b-chat
+      - internlm/internlm2_5-20b-chat
+      - internlm/internlm2_5-7b-chat
+      - AIDC-AI/Marco-o1
+      - SeedLLM/Seed-Rice-7B
+      - TeleAI/TeleChat2
     - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
       选填项，默认为 `false`。
 
