@@ -152,18 +152,30 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
         while True:
             chn = input('REQ: ')
             chn = chn.strip().lower()
-            if not chn:
-                pass
-            for i in lt:
-                if sel_guess(chn,i):
-                    lst[i][keyword] = i
-                    return lst[i]
+            if chn:
+                for i in lt:
+                    if sel_guess(chn,i):
+                        lst[i][keyword] = i
+                        return lst[i]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     lst[lt[0]][keyword] = lt[0]
     return lst[lt[0]]
 
 def free_models(lst:dict) -> tuple:
+    """Filter free models out.
+
+    Generate a tuple of free models.
+    If none of the models is free,
+    print a warning message and proceed with the full model list.
+
+    Args:
+        - lst: dict
+          Keys are model names.
+          Values are nested dicts: we only care the key `free` in it.
+    Returns:
+        tuple: a list of models.
+    """
     if not (free := tuple(m for m, n in lst.items() if n.get('free'))):
         print('WRN: No free models available.')
         print('WRN: Proceeding with the full model list.')
@@ -211,6 +223,18 @@ def sel_guess(chn:str,sel:str) -> bool:
     return False
 
 def model_remap(remap_conf:dict) -> dict:
+    """The remap center.
+
+    Remap means that we map the selected models into different versions according to conf.
+    Currently, we need to remap QWEN (3 ver) and SIF (2 ver).
+    We use the service's full name as the identifier.
+
+    Args:
+        - remap_conf: dict
+          The conf in which the model needs to be remapped.
+    Returns:
+        dict: The model-remapped conf.
+    """
     if remap_conf.get('full_name') == 'ModelStudio':
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
         del remap_conf['version']
