@@ -11,7 +11,8 @@ checklt_ori = {
         "long_prompt": (False, False),
         "show_temp": (True, False),
         "show_system": (True, False),
-        "hidden_models": ([], False)
+        "hidden_models": ([], False),
+        "free_only": (False,False)
     }, False),
     "service": ({
         "DS": ({
@@ -149,6 +150,10 @@ def service_infoget(service:str) -> dict:
         If there is none, omit it.
       - temp_range: dict
         The same as the above one; use it to override the service setting.
+      - reasoner: bool
+        Whether the model is DeepSeek-R1 like.
+      - free: bool
+        Whether the model is free of charge.
 
     Root keys here can override the ones in conf (to avoid invalid usage),
     and are overriden by the ones in models (to be more model-specific).
@@ -177,7 +182,9 @@ def service_infoget(service:str) -> dict:
             },
             'models': {
                 'deepseek-chat': {},
-                'deepseek-reasoner': {}
+                'deepseek-reasoner': {
+                    'reasoner': True
+                }
             }
         },
         'GLM': {
@@ -199,7 +206,8 @@ def service_infoget(service:str) -> dict:
                     'tools': glm_tools
                 },
                 'glm-4-flash': {
-                    'tools': glm_tools
+                    'tools': glm_tools,
+                    'free': True
                 },
                 'glm-4-flashx': {
                     'tools': glm_tools
@@ -255,6 +263,9 @@ def service_infoget(service:str) -> dict:
                         'no_max': True
                     }
                 },
+                'qwen2.5-1.5b-instruct': {
+                    'free': True
+                },
                 'qwen-math-plus': {
                     'temp_range': {
                         'max_temp': 2,
@@ -269,19 +280,41 @@ def service_infoget(service:str) -> dict:
                         'no_max': True
                     }
                 },
+                'qwen2.5-math-1.5b-instruct': {
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.00,
+                        'no_max': True
+                    },
+                    'free': True
+                },
                 'qwen-coder-plus': {},
                 'qwen-coder-turbo': {},
+                'qwen2.5-coder-3b-instruct': {
+                    'free': True
+                },
+                'qwq-32b-preview': {},
                 'deepseek-v3': {
                     'max_tokens': 8192,
                     'temp_range': {
                         'max_temp': 2,
-                        'default_temp': 1.00
+                        'default_temp': 0.70
                     }
                 },
                 'deepseek-r1': {
-                    'max_tokens': 32768
+                    'max_tokens': 8192,
+                    'reasoner': True
                 },
-                'qwq-32b-preview': {}
+                'deepseek-r1-distill-llama-70b': {
+                    'max_tokens': 16384,
+                    'reasoner': True,
+                    'free': True
+                },
+                'deepseek-r1-distill-qwen-1.5b': {
+                    'max_tokens': 16384,
+                    'reasoner': True,
+                    'free': True
+                }
             }
         },
         'SIF': {
@@ -295,31 +328,33 @@ def service_infoget(service:str) -> dict:
             },
             'models': {
                 'deepseek-ai/DeepSeek-R1': {
-                    'max_tokens': 8192
+                    'max_tokens': 8192,
+                    'reasoner': True
                 },
                 'deepseek-ai/DeepSeek-V3': {},
-                'deepseek-ai/DeepSeek-R1-Distill-Llama-8B': {
-                    'max_tokens': 16384
-                },
                 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B': {
-                    'max_tokens': 16384
+                    'max_tokens': 16384,
+                    'reasoner': True,
+                    'free': True
                 },
-                'meta-llama/Llama-3.3-70B-Instruct': {},
-                'meta-llama/Meta-Llama-3.1-8B-Instruct': {},
                 'Qwen/Qwen2.5-72B-Instruct-128K': {},
-                'Qwen/Qwen2.5-7B-Instruct': {},
+                'Qwen/Qwen2.5-7B-Instruct': {
+                    'free': True
+                },
                 'Qwen/Qwen2.5-Coder-32B-Instruct': {},
-                'Qwen/Qwen2.5-Coder-7B-Instruct': {},
+                'Qwen/Qwen2.5-Coder-7B-Instruct': {
+                    'free': True
+                },
                 'Qwen/QwQ-32B-Preview': {
                     'max_tokens': 8192
                 },
-                'THUDM/glm-4-9b-chat': {},
-                'internlm/internlm2_5-20b-chat': {},
-                'internlm/internlm2_5-7b-chat': {},
-                'AIDC-AI/Marco-o1': {
-                    'max_tokens': 8192
+                'THUDM/glm-4-9b-chat': {
+                    'free': True
                 },
-                'SeedLLM/Seed-Rice-7B': {},
+                'internlm/internlm2_5-20b-chat': {},
+                'internlm/internlm2_5-7b-chat': {
+                    'free': True
+                },
                 'TeleAI/TeleChat2': {}
             }
         }
