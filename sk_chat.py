@@ -30,6 +30,7 @@ The function system structure: (arguments omitted)
 - Configuration reader
   conf_read()
   - service_model()
+    - free_models()
     - info_print()
     - sel_guess()
   - model_remap()
@@ -101,8 +102,8 @@ def conf_read() -> dict:
     print()
     service_conf = service_model('service',conf_r.get('service'))
     service_info = service_infoget(service_conf.get('service'))
-    conf_r.update(service_info)
     conf_r.update(service_conf)
+    conf_r.update(service_info)
     del conf_r['service']
     print()
     try:
@@ -116,18 +117,12 @@ def conf_read() -> dict:
     model_info = service_model(
         'model',
         model_display,
-        service_conf.get('model','prompt')
+        conf_r.get('model','prompt'),
+        conf_r.get('prompt_control').get('free_only')
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range'))
     del conf_r['models'], conf_r['temp_range']
-    conf_r['reasoner'] = conf_r.get('model') in {
-        'deepseek-reasoner',
-        'deepseek-r1',
-        'deepseek-ai/DeepSeek-R1',
-        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
-        'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
-    }
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
     for i in nested:
@@ -137,8 +132,11 @@ def conf_read() -> dict:
     # print(conf_r)
     return conf_r
 
-def service_model(keyword:str,lst:dict,sts:str='prompt') -> str:
-    lt = tuple(lst.keys())
+def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
+    if free:
+        lt = free_models(lst)
+    else:
+        lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
     if sts != 'prompt' and sts in lt:
@@ -164,6 +162,13 @@ def service_model(keyword:str,lst:dict,sts:str='prompt') -> str:
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     lst[lt[0]][keyword] = lt[0]
     return lst[lt[0]]
+
+def free_models(lst:dict) -> tuple:
+    if not (free := tuple(m for m, n in lst.items() if n.get('free'))):
+        print('WRN: No free models available.')
+        print('WRN: Proceeding with the full model list.')
+        free = tuple(lst.keys())
+    return free
 
 def info_print(lt:list) -> None:
     """Print info neatly.
@@ -210,7 +215,8 @@ def model_remap(remap_conf:dict) -> dict:
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
         del remap_conf['version']
         return remap_conf
-    if remap_conf.get('full_name') == 'SiliconFlow':
+    if remap_conf.get('full_name') == 'SiliconFlow' and \
+       not remap_conf.get('prompt_control').get('free_only'):
         model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         remap_conf['model'] = model
         if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
@@ -297,9 +303,7 @@ def sif_remap(model:str,pro:bool) -> str:
     if model not in {
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
-        'deepseek-ai/DeepSeek-R1-Distill-Llama-8B',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
-        'meta-llama/Meta-Llama-3.1-8B-Instruct',
         'Qwen/Qwen2.5-7B-Instruct',
         'Qwen/Qwen2.5-Coder-7B-Instruct',
         'THUDM/glm-4-9b-chat'
