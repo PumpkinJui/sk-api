@@ -18,7 +18,7 @@
 ## 功能特性
 
 - 多轮对话
-- 流式传输 (默认禁用)
+- 流式传输 (默认启用)
 - 多行输入输出
 - 温度 (temperature)、系统提示词 (system prompt) 设定
 - 极致轻简 (打包后仅占 6 MB 空间)
@@ -172,6 +172,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 ### sk.json
 
+注：新版的 `sk.json` 配置文件有较大概率和旧版不兼容。建议在更新后根据最新模板重新配置 `sk.json`，并同时查看新功能！
+
 <details>
 
 配置文件，使用 JSON 语言。支持的配置项如下：
@@ -194,7 +196,10 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   - `show_system`：`bool`。设定为 `true` 时提示设置系统提示词，`false` 不提示。  
     选填项，默认为 `true`。
   - `hidden_models`：`list`。将模型全称区分大小写地填入其中，填写的模型将不会在询问时展示；该列表对全部服务适用。模型名称请以选择成功时的提示结果为准，不要以选择列表或重映射信息为准。  
+    注：此处的模型名称填写规则对下文亦适用。  
     选填项，默认为 `[]`。
+  - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
+    选填项，默认为 `false`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DS`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
@@ -236,12 +241,17 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - qwen-plus
       - qwen-turbo
       - qwen-long
+      - qwen2.5-1.5b-instruct
       - qwen-math-plus
       - qwen-math-turbo
+      - qwen2.5-math-1.5b-instruct
       - qwen-coder-plus
       - qwen-coder-turbo
+      - qwen2.5-coder-3b-instruct
       - deepseek-v3
       - deepseek-r1
+      - deepseek-r1-distill-llama-70b
+      - deepseek-r1-distill-qwen-1.5b
       - qwq-32b-preview
     - `version`：`str`。选择使用的模型版本。  
       选填项，默认为 `latest`。可选项包括：
@@ -255,10 +265,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - prompt
       - deepseek-ai/DeepSeek-R1
       - deepseek-ai/DeepSeek-V3
-      - deepseek-ai/DeepSeek-R1-Distill-Llama-8B
       - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
-      - meta-llama/Llama-3.3-70B-Instruct
-      - meta-llama/Meta-Llama-3.1-8B-Instruct
       - Qwen/Qwen2.5-72B-Instruct-128K
       - Qwen/Qwen2.5-7B-Instruct
       - Qwen/Qwen2.5-Coder-32B-Instruct
@@ -267,8 +274,6 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - THUDM/glm-4-9b-chat
       - internlm/internlm2_5-20b-chat
       - internlm/internlm2_5-7b-chat
-      - AIDC-AI/Marco-o1
-      - SeedLLM/Seed-Rice-7B
       - TeleAI/TeleChat2
     - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
       选填项，默认为 `false`。

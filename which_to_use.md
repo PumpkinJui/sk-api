@@ -18,6 +18,8 @@
 
 个人优先 QWEN 和 SIF 吧。
 
+DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗打，Kimi 小贵不如用 APP（那个 k1.5 没有 API 接口）。
+
 ## DS
 
 ### API KEY
@@ -52,11 +54,13 @@
 
 `glm-zero-preview` 和 `DeepSeek-R1` 有点像，但是效果差远了。`glm-4-flash` 免费。
 
-体验金爆炸，1600w air 专用 + 200w plus 专用 + 200w 所有按 token 计费的模型通用 + 400 次图片生成（这个程序用不上）。实名再送 500w 通用。
+体验金爆炸，1600w air 专用 + 200w plus 专用 + 200w 所有按 token 计费的模型通用 + 400 次图片生成（这个程序用不上）。实名再送 500w 通用。「资源包」量大又便宜。
 
 ### 劣势
 
 质量不过硬，我是相对 `DeepSeek-V3` 和通义千问系列说的。时不时该联网不联网，搜到的数据也是稍旧的。
+
+`glm-zero-preview` 完全和 `DeepSeek-R1` 没有可比性。glm0 时不时就不思考了，思考也是在输出内容内部思考的（没有专门的 `reasoning_content` 字段）。
 
 体验金有效期都是一个月，不能吃一辈子。
 
@@ -68,7 +72,7 @@
 
 ### 优势
 
-联网搜索很强，输出速度很快。
+联网搜索很强，输出速度很快，擅长长文输入和总结。
 
 体验金 15 元，有效期未知，据说一年。
 
@@ -85,7 +89,7 @@
 ### API KEY
 
 - [API KEY 管理页面](https://bailian.console.aliyun.com/?apiKey=1#/api-key)
-- [获取教程](https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key)
+- [API KEY 获取教程](https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key)
 
 ### 优势
 
@@ -99,7 +103,9 @@
 
 ### 劣势
 
-`DeepSeek-R1` 输出有点慢。想不出来了。
+`DeepSeek-R1` 输出有点慢，小概率输出一半突然掉线（timeout）。
+
+不理解，可能是服务器没给到位？通义千问系列反倒确实很快。
 
 ## SIF
 
@@ -109,21 +115,30 @@
 
 ### 优势
 
-输出特别特别快！
-
-模型也比较全面了，我见过的没见过的都有一些，甚至有水稻行业大模型……
-
-有一些是免费模型：
-
-- deepseek-ai/DeepSeek-R1-Distill-Llama-8B
-- deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
-- Qwen/Qwen2.5-7B-Instruct
-- Qwen/Qwen2.5-Coder-7B-Instruct
-- internlm/internlm2_5-7b-chat
-- meta-llama/Meta-Llama-3.1-8B-Instruct
+输出特别快！模型也比较全面了，我见过的没见过的都有一些。
 
 体验金 14 元，没有有效期！
 
 ### 劣势
 
 有时会出现服务连不上、回复短时间内掉速等情况。夜里比白天服务质量好。
+
+模型全部不能联网。
+
+## 生成效果对比
+
+使用相同的提示词：如何界定依赖 AI 与合理运用 AI？
+
+### deepseek-chat vs glm-4-flash vs kimi-latest vs qwen-max-latest
+
+当然这个对智谱有些不公平，没有用最好的旗舰打……但没办法，我没钱了，有钱再录一个。
+
+视频没处理完，改天再放。
+
+### deepseek-reasoner vs deepseek-r1 vs deepseek-ai/DeepSeek-R1
+
+这个就是速度比拼了。
+
+TL;DR：官方落后二十余秒，和硅基流动同时结束；阿里百炼快要慢死了，用时感觉像是另外两个的两倍多。
+
+视频没处理完，改天再放。
