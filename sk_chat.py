@@ -575,12 +575,12 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('reasoner'):
-            print(choices['message']['reasoning_content'])
+        if choices.get('message').get('reasoning_content'):
+            print(choices.get('message').get('reasoning_content').strip('\n'))
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
         ast = choices.get('message')
-        print(ast.get('content'),end='')
+        print(ast.get('content').strip('\n'),end='')
         conf['msg'].append(ast)
         if choices.get('finish_reason') == 'tool_calls':
             for tool_call in ast.get('tool_calls'):
@@ -646,7 +646,8 @@ def ast_stream() -> None:
         ))
 
 def delta_process(delta_lt:str) -> None:
-    if (delta := delta_lt.get('content')) or delta == '':
+    if (delta := delta_lt.get('content')) or \
+       (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf['ast'] and delta.lstrip('\n') != delta:
             delta = delta.lstrip('\n')
         conf['ast'] += delta
@@ -656,6 +657,8 @@ def delta_process(delta_lt:str) -> None:
             conf['gocon'] = True
     else:
         if delta := delta_lt.get('reasoning_content'):
+            if conf.get('gocon') and delta.lstrip('\n') != delta:
+                delta = delta.lstrip('\n')
             conf['gocon'] = False
         elif delta := delta_lt.get('tool_calls'):
             delta = delta[0]
