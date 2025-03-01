@@ -12,8 +12,9 @@
 
 通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
-嫌 CLI 界面太丑，MarkDown 不渲染？试试 [NextChat](https://app.nextchat.dev/)！  
-个人推荐，非广告；NextChat 与本人无利益关联。
+嫌 CLI 界面太丑，MarkDown 不渲染？试试 [CherryStudio](https://cherry-ai.com/)！  
+个人推荐，非广告；CherryStudio 与本人无利益关联。  
+另附文章：[新学期，给自己配一个好用的 AI 助手吧。会思考，能联网，有知识库那种 - 少数派](https://sspai.com/post/96868)
 
 ## 功能特性
 
