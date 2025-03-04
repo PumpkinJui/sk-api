@@ -626,6 +626,9 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
+                if error_detail := json.loads(data).get('error'):
+                    print()
+                    exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
                 if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
                     continue
                 delta_process(delta_lt)
@@ -763,11 +766,13 @@ try:
 except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
-except requests.exceptions.Timeout:
+except requests.exceptions.Timeout as e:
     print()
-    print("ERR: The request timed out.")
-except requests.exceptions.ConnectionError:
+    print(f'ERR: {e}')
+    print('ERR: The request timed out.')
+except requests.exceptions.ConnectionError as e:
     print()
+    print(f'ERR: {e}')
     print('ERR: A Connection error occurred.')
 # pylint: disable-next=broad-exception-caught
 except Exception:
