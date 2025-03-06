@@ -281,7 +281,8 @@ def qwen_remap(model:str,ver:str) -> str:
     if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
-        'qwen-coder-plus','qwen-coder-turbo'
+        'qwen-coder-plus','qwen-coder-turbo',
+        'qwq-plus'
     } or ver == 'stable':
         return model
     if ver not in {'stable','latest','oss'}:
@@ -299,7 +300,8 @@ def qwen_remap(model:str,ver:str) -> str:
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
         'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
-        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct'
+        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct',
+        'qwq-plus': 'qwq-32b'
     }
     model = oss_map.get(model)
     print(f'INF: Remap to {model}.')

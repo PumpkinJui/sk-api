@@ -293,6 +293,9 @@ def service_infoget(service:str) -> dict:
                 'qwen2.5-coder-3b-instruct': {
                     'free': True
                 },
+                'qwq-plus': {
+                    'reasoner': True
+                },
                 'qwq-32b-preview': {},
                 'deepseek-v3': {
                     'max_tokens': 8192,
@@ -344,6 +347,9 @@ def service_infoget(service:str) -> dict:
                 'Qwen/Qwen2.5-Coder-32B-Instruct': {},
                 'Qwen/Qwen2.5-Coder-7B-Instruct': {
                     'free': True
+                },
+                'Qwen/QwQ-32B': {
+                    'reasoner': True
                 },
                 'Qwen/QwQ-32B-Preview': {
                     'max_tokens': 8192
