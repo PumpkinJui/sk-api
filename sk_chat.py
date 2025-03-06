@@ -152,18 +152,30 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
         while True:
             chn = input('REQ: ')
             chn = chn.strip().lower()
-            if not chn:
-                pass
-            for i in lt:
-                if sel_guess(chn,i):
-                    lst[i][keyword] = i
-                    return lst[i]
+            if chn:
+                for i in lt:
+                    if sel_guess(chn,i):
+                        lst[i][keyword] = i
+                        return lst[i]
             print('ERR: Selection invalid.')
     print(f'INF: {keyword.capitalize()} {lt[0]} in use.')
     lst[lt[0]][keyword] = lt[0]
     return lst[lt[0]]
 
 def free_models(lst:dict) -> tuple:
+    """Filter free models out.
+
+    Generate a tuple of free models.
+    If none of the models is free,
+    print a warning message and proceed with the full model list.
+
+    Args:
+        - lst: dict
+          Keys are model names.
+          Values are nested dicts: we only care the key `free` in it.
+    Returns:
+        tuple: a list of models.
+    """
     if not (free := tuple(m for m, n in lst.items() if n.get('free'))):
         print('WRN: No free models available.')
         print('WRN: Proceeding with the full model list.')
@@ -211,6 +223,18 @@ def sel_guess(chn:str,sel:str) -> bool:
     return False
 
 def model_remap(remap_conf:dict) -> dict:
+    """The remap center.
+
+    Remap means that we map the selected models into different versions according to conf.
+    Currently, we need to remap QWEN (3 ver) and SIF (2 ver).
+    We use the service's full name as the identifier.
+
+    Args:
+        - remap_conf: dict
+          The conf in which the model needs to be remapped.
+    Returns:
+        dict: The model-remapped conf.
+    """
     if remap_conf.get('full_name') == 'ModelStudio':
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
         del remap_conf['version']
@@ -257,7 +281,8 @@ def qwen_remap(model:str,ver:str) -> str:
     if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
-        'qwen-coder-plus','qwen-coder-turbo'
+        'qwen-coder-plus','qwen-coder-turbo',
+        'qwq-plus'
     } or ver == 'stable':
         return model
     if ver not in {'stable','latest','oss'}:
@@ -275,7 +300,8 @@ def qwen_remap(model:str,ver:str) -> str:
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
         'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
-        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct'
+        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct',
+        'qwq-plus': 'qwq-32b'
     }
     model = oss_map.get(model)
     print(f'INF: Remap to {model}.')
@@ -551,12 +577,12 @@ def ast_nostream() -> None:
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
-        if conf.get('reasoner'):
-            print(choices['message']['reasoning_content'])
+        if choices.get('message').get('reasoning_content'):
+            print(choices.get('message').get('reasoning_content').strip('\n'))
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
         ast = choices.get('message')
-        print(ast.get('content'),end='')
+        print(ast.get('content').strip('\n'),end='')
         conf['msg'].append(ast)
         if choices.get('finish_reason') == 'tool_calls':
             for tool_call in ast.get('tool_calls'):
@@ -602,6 +628,9 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
+                if error_detail := json.loads(data).get('error'):
+                    print()
+                    exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
                 if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
                     continue
                 delta_process(delta_lt)
@@ -622,7 +651,8 @@ def ast_stream() -> None:
         ))
 
 def delta_process(delta_lt:str) -> None:
-    if (delta := delta_lt.get('content')) or delta == '':
+    if (delta := delta_lt.get('content')) or \
+       (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf['ast'] and delta.lstrip('\n') != delta:
             delta = delta.lstrip('\n')
         conf['ast'] += delta
@@ -632,6 +662,8 @@ def delta_process(delta_lt:str) -> None:
             conf['gocon'] = True
     else:
         if delta := delta_lt.get('reasoning_content'):
+            if conf.get('gocon') and delta.lstrip('\n') != delta:
+                delta = delta.lstrip('\n')
             conf['gocon'] = False
         elif delta := delta_lt.get('tool_calls'):
             delta = delta[0]
@@ -736,11 +768,13 @@ try:
 except KeyboardInterrupt:
     print()
     print('INF: Aborted.')
-except requests.exceptions.Timeout:
+except requests.exceptions.Timeout as e:
     print()
-    print("ERR: The request timed out.")
-except requests.exceptions.ConnectionError:
+    print(f'ERR: {e}')
+    print('ERR: The request timed out.')
+except requests.exceptions.ConnectionError as e:
     print()
+    print(f'ERR: {e}')
     print('ERR: A Connection error occurred.')
 # pylint: disable-next=broad-exception-caught
 except Exception:
