@@ -74,6 +74,8 @@ pip install -r requirements.txt
 pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 ```
 
+如需最新测试版，请在切换到 `develop` 分支后，使用相同命令进行打包。（属性中的版本号可能显示为旧版。）
+
 ## FAQ
 
 ### 做这个程序有什么意义？
@@ -249,11 +251,12 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - qwen-coder-plus
       - qwen-coder-turbo
       - qwen2.5-coder-3b-instruct
+      - qwq-plus
+      - qwq-32b-preview
       - deepseek-v3
       - deepseek-r1
       - deepseek-r1-distill-llama-70b
       - deepseek-r1-distill-qwen-1.5b
-      - qwq-32b-preview
     - `version`：`str`。选择使用的模型版本。  
       选填项，默认为 `latest`。可选项包括：
       - latest
@@ -271,6 +274,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - Qwen/Qwen2.5-7B-Instruct
       - Qwen/Qwen2.5-Coder-32B-Instruct
       - Qwen/Qwen2.5-Coder-7B-Instruct
+      - Qwen/QwQ-32B
       - Qwen/QwQ-32B-Preview
       - THUDM/glm-4-9b-chat
       - internlm/internlm2_5-20b-chat
