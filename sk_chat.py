@@ -180,7 +180,7 @@ def free_models(lst:dict) -> tuple:
         free = tuple(lst.keys())
     return free
 
-def info_print(lt:list) -> None:
+def info_print(lt:tuple) -> None:
     """Print info neatly.
 
     If everything is within 18 characters,
@@ -189,17 +189,18 @@ def info_print(lt:list) -> None:
     If not, just print them 1 per line.
 
     Args:
-        - lt: list
+        - lt: tuple
           The info list.
     Returns: None.
     """
     lt = [i.split('/')[1] if '/' in i else i for i in lt]
-    max_len = max(len(i) for i in lt)
-    if max_len <= 18:
+    max_len_former = max(len(n) for m,n in enumerate(lt) if m % 2 == 0)
+    max_len_latter = max(len(n) for m,n in enumerate(lt) if m % 2 == 1)
+    if max_len_former <= 18 and max_len_latter <= 25:
         k = 0
         while k < len(lt):
             # pylint: disable-next=expression-not-assigned
-            print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
+            print('INF:',lt[k].ljust(max_len_former),end='\t') if k % 2 == 0 else print(lt[k])
             k += 1
         if k % 2 == 1:
             print()
@@ -476,7 +477,7 @@ def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
     if conf.get('autotime'):
-        sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+        sys += f'\nNow it is {now_utc().strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
@@ -529,6 +530,7 @@ def emohaa_meta_get() -> dict:
     return meta
 
 def ast_nostream() -> None:
+    begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -558,6 +560,31 @@ def ast_nostream() -> None:
             ast_nostream()
         else:
             print('\n')
+            if conf.get('benchmark'):
+                end = now_utc().timestamp()
+                print(f'BENCHMARK #{conf.get("rnd")}')
+                output_tokens = json.loads(rsp.text).get('usage').get('completion_tokens')
+                benchmark_data = (
+                    f'{begin:.6f}',
+                    f'{end:.6f}',
+                    f'{end - begin:.6f}',
+                    output_tokens,
+                    f'{output_tokens / (end - begin):.6f}'
+                )
+                benchmark_label = ('begin', 'end', 'duration', 'usage', 'rate')
+                benchmark_result = []
+                int_len = max(len(i.split('.')[0])
+                    if isinstance(i,str) else
+                    len(str(i)) for i in benchmark_data)
+                for i in range(5):
+                    benchmark_result.append(benchmark_label[i])
+                    benchmark_result.append(
+                        benchmark_data[i].rjust(int_len + 7)
+                        if isinstance(benchmark_data[i],str) else
+                        str(benchmark_data[i]).rjust(int_len)
+                    )
+                info_print(tuple(benchmark_result))
+                print()
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -719,6 +746,7 @@ def chat() -> None:
         ast_stream() if conf.get('stream') else ast_nostream()
 
 try:
+    now_utc = lambda: datetime.now(timezone.utc)
     conf = conf_read()
     print()
     if conf.get('balance_chk') and conf.get('chk_url'):

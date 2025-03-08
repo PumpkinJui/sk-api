@@ -12,7 +12,8 @@ checklt_ori = {
         "show_temp": (True, False),
         "show_system": (True, False),
         "hidden_models": ([], False),
-        "free_only": (False,False)
+        "free_only": (False, False),
+        "benchmark": (False, False)
     }, False),
     "service": ({
         "DS": ({
