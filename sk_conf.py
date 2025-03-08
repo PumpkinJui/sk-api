@@ -37,6 +37,10 @@ checklt_ori = {
             "KEY": ("", True),
             "model": ("prompt", False),
             "pro": (False, False)
+        }, False),
+        "LEC": ({
+            "KEY": ("", True),
+            "model": ("prompt", False),
         }, False)
     }, True)
 }
@@ -94,6 +98,8 @@ def key_check(key_conf:dict) -> dict: # specific
     if ser := key_conf.get('service'):
         for m,n in ser.items():
             # print(m,n)
+            if m == 'LEC':
+                return key_conf
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
@@ -362,6 +368,33 @@ def service_infoget(service:str) -> dict:
                     'free': True
                 },
                 'TeleAI/TeleChat2': {}
+            }
+        },
+        'LEC': {
+            'full_name': 'LeChat',
+            'cht_url': 'https://api.mistral.ai/v1/chat/completions',
+            'temp_range': {
+                'max_temp': 1.5,
+                'default_temp': 0.30
+            },
+            'models': {
+                'mistral-large-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.70
+                    }
+                },
+                'mistral-small-latest': {},
+                'open-mistral-nemo': {},
+                'codestral-latest': {},
+                'open-codestral-mamba': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.70
+                    }
+                },
+                'ministral-3b-latest': {},
+                'ministral-8b-latest': {}
             }
         }
     }
