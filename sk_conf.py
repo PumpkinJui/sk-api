@@ -21,8 +21,7 @@ checklt_ori = {
         }, False),
         "GLM": ({
             "KEY": ("", True),
-            "model": ("prompt", False),
-            "jwt": (True, False)
+            "model": ("prompt", False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),

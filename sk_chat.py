@@ -37,7 +37,6 @@ The function system structure: (arguments omitted)
     - qwen_remap()
     - sif_remap()
 - Generator
-  - token_gen()
   - headers_gen()
   - payload_gen()
 - Input reader
@@ -74,7 +73,6 @@ from datetime import datetime,timezone # provide date to LLMs
 import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
-from jwt import encode # pass API KEY safely to supported services
 from sk_conf import conf_get, service_infoget # read conf and provide services' info
 
 def exitc(reason:str='') -> None:
@@ -339,42 +337,6 @@ def sif_remap(model:str,pro:bool) -> str:
     print(f'INF: Remap to {model}.')
     return model
 
-def token_gen() -> str:
-    """Generate jwt tokens for jwt-supported services.
-
-    1. If the desired service is not jwt-supported,
-       return `KEY` directly.
-    2. If it is, split it by `.` and assess its length.
-    3. If length is 3, the user puts a jwt token in `conf`, so return it directly.
-    4. If length is not 2, `KEY` is not valid and call `exitc()`.
-    5. Then length should be 2, since there is at least one `.` or `KEYcheck()` will fail.
-       Generate a token that expires in 30 sec, and return it.
-
-    Jwt-support ability is judged by `conf.jwt`. Currently the only one supporting jwt is GLM.
-
-    Args: None.
-    Returns:
-        str: KEY or token.
-    """
-    if not conf.get('jwt'):
-        return conf.get('KEY')
-    ksp = conf.get('KEY').split(".")
-    if len(ksp) == 3:
-        return conf.get('KEY')
-    if len(ksp) != 2:
-        exitc('ERR: Invalid KEY.')
-    payload = {
-        "api_key": ksp[0],
-        "exp": int(round(datetime.now(timezone.utc).timestamp() * 1000)) + 30 * 1000,
-        "timestamp": int(round(datetime.now(timezone.utc).timestamp() * 1000)),
-    }
-    return encode(
-        payload,
-        ksp[1],
-        algorithm="HS256",
-        headers={"alg": "HS256", "sign_type": "SIGN"},
-    )
-
 def headers_gen() -> dict:
     """Generate request headers.
 
@@ -385,7 +347,7 @@ def headers_gen() -> dict:
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': f'Bearer {token_gen()}'
+        'Authorization': f'Bearer {conf.get("KEY")}'
     }
     # print(headers)
     return headers
