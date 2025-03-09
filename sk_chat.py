@@ -37,7 +37,6 @@ The function system structure: (arguments omitted)
     - qwen_remap()
     - sif_remap()
 - Generator
-  - token_gen()
   - headers_gen()
   - payload_gen()
 - Input reader
@@ -54,6 +53,7 @@ The function system structure: (arguments omitted)
   - ast_stream()
     - delta_process()
     - tool_append()
+  - benchmark()
 
 The actual writing and running order may vary.
 
@@ -74,7 +74,6 @@ from datetime import datetime,timezone # provide date to LLMs
 import json # decode and encode
 from traceback import print_exc # unexpected exceptions handling
 import requests # GET and POST to servers
-from jwt import encode # pass API KEY safely to supported services
 from sk_conf import conf_get, service_infoget # read conf and provide services' info
 
 def exitc(reason:str='') -> None:
@@ -182,7 +181,7 @@ def free_models(lst:dict) -> tuple:
         free = tuple(lst.keys())
     return free
 
-def info_print(lt:list) -> None:
+def info_print(lt:tuple) -> None:
     """Print info neatly.
 
     If everything is within 18 characters,
@@ -191,17 +190,19 @@ def info_print(lt:list) -> None:
     If not, just print them 1 per line.
 
     Args:
-        - lt: list
+        - lt: tuple
           The info list.
     Returns: None.
     """
     lt = [i.split('/')[1] if '/' in i else i for i in lt]
-    max_len = max(len(i) for i in lt)
-    if max_len <= 18:
+    max_len_former = max(len(n) for m,n in enumerate(lt) if m % 2 == 0)
+    max_len_latter = max(len(n) for m,n in enumerate(lt) if m % 2 == 1)
+    if (max_len_former <= 18 and max_len_latter <= 25) or \
+       (max_len_former <= 26 and max_len_latter <= 18):
         k = 0
         while k < len(lt):
             # pylint: disable-next=expression-not-assigned
-            print('INF:',lt[k].ljust(max_len),end='\t') if k % 2 == 0 else print(lt[k])
+            print('INF:',lt[k].ljust(max_len_former),end='\t') if k % 2 == 0 else print(lt[k])
             k += 1
         if k % 2 == 1:
             print()
@@ -339,42 +340,6 @@ def sif_remap(model:str,pro:bool) -> str:
     print(f'INF: Remap to {model}.')
     return model
 
-def token_gen() -> str:
-    """Generate jwt tokens for jwt-supported services.
-
-    1. If the desired service is not jwt-supported,
-       return `KEY` directly.
-    2. If it is, split it by `.` and assess its length.
-    3. If length is 3, the user puts a jwt token in `conf`, so return it directly.
-    4. If length is not 2, `KEY` is not valid and call `exitc()`.
-    5. Then length should be 2, since there is at least one `.` or `KEYcheck()` will fail.
-       Generate a token that expires in 30 sec, and return it.
-
-    Jwt-support ability is judged by `conf.jwt`. Currently the only one supporting jwt is GLM.
-
-    Args: None.
-    Returns:
-        str: KEY or token.
-    """
-    if not conf.get('jwt'):
-        return conf.get('KEY')
-    ksp = conf.get('KEY').split(".")
-    if len(ksp) == 3:
-        return conf.get('KEY')
-    if len(ksp) != 2:
-        exitc('ERR: Invalid KEY.')
-    payload = {
-        "api_key": ksp[0],
-        "exp": int(round(datetime.now(timezone.utc).timestamp() * 1000)) + 30 * 1000,
-        "timestamp": int(round(datetime.now(timezone.utc).timestamp() * 1000)),
-    }
-    return encode(
-        payload,
-        ksp[1],
-        algorithm="HS256",
-        headers={"alg": "HS256", "sign_type": "SIGN"},
-    )
-
 def headers_gen() -> dict:
     """Generate request headers.
 
@@ -385,7 +350,7 @@ def headers_gen() -> dict:
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': f'Bearer {token_gen()}'
+        'Authorization': f'Bearer {conf.get("KEY")}'
     }
     # print(headers)
     return headers
@@ -408,6 +373,10 @@ def payload_gen() -> str:
         "temperature": conf.get('temp'),
         "stream": conf.get('stream')
     }
+    if conf.get('stream') and conf.get('full_name') != 'LeChat':
+        payload['stream_options'] = {
+            'include_usage': True
+        }
     if conf.get('tool_use') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
@@ -514,7 +483,7 @@ def system_get() -> dict:
     print('SYSTEM')
     sys = lines_get() or 'You are a helpful assistant.'
     if conf.get('autotime'):
-        sys += f'\nNow it is {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
+        sys += f'\nNow it is {now_utc().strftime("%Y-%m-%d %H:%M:%S")} in UTC.'
     return {'role': 'system', 'content': sys}
 
 def usr_get() -> dict:
@@ -567,6 +536,7 @@ def emohaa_meta_get() -> dict:
     return meta
 
 def ast_nostream() -> None:
+    req_begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -596,6 +566,12 @@ def ast_nostream() -> None:
             ast_nostream()
         else:
             print('\n')
+            if conf.get('benchmark').get('enable'):
+                benchmark(
+                    req_begin,
+                    now_utc().timestamp(),
+                    json.loads(rsp.text).get('usage').get('completion_tokens')
+                )
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -609,6 +585,9 @@ def ast_stream() -> None:
     conf['tool_lt'] = []
     conf['tool'] = {'role': 'tool'}
     conf['tool_index'] = 0
+    conf['first_token'] = None
+    last = ''
+    req_begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -628,10 +607,13 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
-                if error_detail := json.loads(data).get('error'):
+                data = json.loads(data)
+                last = data
+                if error_detail := data.get('error'):
                     print()
                     exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
-                if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
+                if not (choices := data.get('choices')) or \
+                   not (delta_lt := choices[0].get('delta')):
                     continue
                 delta_process(delta_lt)
         if len(conf.get('tool')) != 1:
@@ -643,6 +625,12 @@ def ast_stream() -> None:
             conf['msg'].append({'role': 'assistant', 'content': conf.get('ast')})
             print()
             print()
+            if conf.get('benchmark').get('enable'):
+                benchmark(
+                    req_begin,
+                    now_utc().timestamp(),
+                    last.get('usage').get('completion_tokens')
+                )
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -651,6 +639,10 @@ def ast_stream() -> None:
         ))
 
 def delta_process(delta_lt:str) -> None:
+    if not conf['first_token'] and \
+       (not conf.get('ast') and delta_lt.get('content')) or \
+       (conf.get('gocon') and delta_lt.get('reasoning_content')):
+        conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf['ast'] and delta.lstrip('\n') != delta:
@@ -701,6 +693,49 @@ def tool_append(tool_lt:list) -> None:
     })
     for i in tool_lt:
         conf['msg'].append(i)
+
+def benchmark(req_begin:float,end:float,tokens:int) -> None:
+    print(f'BENCHMARK #{conf.get("rnd")}')
+    if first := conf.get('first_token',None):
+        data = {
+            'request_begin': f'{req_begin:.6f}',
+            'first_token': f'{first:.6f}',
+            'request_end': f'{end:.6f}',
+            'request_duration': f'{end - req_begin:.6f}',
+            'request_queue': f'{first - req_begin:.6f}',
+            'completion_duration': f'{end - first:.6f}',
+            'completion_tokens': tokens,
+            'tokens_per_second':
+                f'{tokens / (end - first):.6f}',
+            'milliseconds_per_token':
+                f'{(end - first) / tokens * 1000:.6f}'
+        }
+    else:
+        data = {
+            'request_begin': f'{req_begin:.6f}',
+            'request_end': f'{end:.6f}',
+            'request_duration': f'{end - req_begin:.6f}',
+            'completion_tokens': tokens,
+            'tokens_per_second':
+                f'{tokens / (end - req_begin):.6f}',
+            'milliseconds_per_token':
+                f'{(end - req_begin) / tokens * 1000:.6f}'
+        }
+    if not conf.get('benchmark').get('long'):
+        __ = [data.pop(i,None) for i in ('request_begin','request_end','first_token')]
+    result = []
+    int_len = max(len(i.split('.')[0])
+        if isinstance(i,str) else
+        len(str(i)) for i in data.values())
+    for m,n in data.items():
+        result.append(m)
+        result.append(
+            n.rjust(int_len + 7)
+            if isinstance(n,str) else
+            str(n).rjust(int_len)
+        )
+    info_print(tuple(result))
+    print()
 
 # pylint: disable-next=inconsistent-return-statements
 def balance_chk() -> str:
@@ -757,6 +792,8 @@ def chat() -> None:
         ast_stream() if conf.get('stream') else ast_nostream()
 
 try:
+    # pylint: disable-next=unnecessary-lambda-assignment
+    now_utc = lambda: datetime.now(timezone.utc)
     conf = conf_read()
     print()
     if conf.get('balance_chk') and conf.get('chk_url'):
