@@ -13,7 +13,10 @@ checklt_ori = {
         "show_system": (True, False),
         "hidden_models": ([], False),
         "free_only": (False, False),
-        "benchmark": (False, False)
+        "benchmark": ({
+            "enable": (False, False),
+            "long": (False, False)
+        }, False)
     }, False),
     "service": ({
         "DS": ({

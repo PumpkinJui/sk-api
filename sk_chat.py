@@ -566,7 +566,7 @@ def ast_nostream() -> None:
             ast_nostream()
         else:
             print('\n')
-            if conf.get('benchmark'):
+            if conf.get('benchmark').get('enable'):
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
@@ -624,7 +624,7 @@ def ast_stream() -> None:
             conf['msg'].append({'role': 'assistant', 'content': conf.get('ast')})
             print()
             print()
-            if conf.get('benchmark'):
+            if conf.get('benchmark').get('enable'):
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
@@ -719,6 +719,8 @@ def benchmark(req_begin:float,end:float,tokens:int) -> None:
             'milliseconds_per_token':
                 f'{(end - req_begin) / tokens * 1000:.6f}'
         }
+    if not conf.get('benchmark').get('long'):
+        __ = [data.pop(i,None) for i in ('request_begin','request_end','first_token')]
     result = []
     int_len = max(len(i.split('.')[0])
         if isinstance(i,str) else
