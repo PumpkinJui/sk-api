@@ -530,7 +530,7 @@ def emohaa_meta_get() -> dict:
     return meta
 
 def ast_nostream() -> None:
-    begin = now_utc().timestamp()
+    request_begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -561,27 +561,29 @@ def ast_nostream() -> None:
         else:
             print('\n')
             if conf.get('benchmark'):
-                end = now_utc().timestamp()
+                request_end = now_utc().timestamp()
                 print(f'BENCHMARK #{conf.get("rnd")}')
-                output_tokens = json.loads(rsp.text).get('usage').get('completion_tokens')
-                benchmark_data = (
-                    f'{begin:.6f}',
-                    f'{end:.6f}',
-                    f'{end - begin:.6f}',
-                    output_tokens,
-                    f'{output_tokens / (end - begin):.6f}'
-                )
-                benchmark_label = ('begin', 'end', 'duration', 'usage', 'rate')
+                completion_tokens = json.loads(rsp.text).get('usage').get('completion_tokens')
+                benchmark_data = {
+                    'request_begin': f'{request_begin:.6f}',
+                    'request_end': f'{request_end:.6f}',
+                    'request_duration': f'{request_end - request_begin:.6f}',
+                    'completion_tokens': completion_tokens,
+                    'tps':
+                        f'{completion_tokens / (request_end - request_begin):.6f}',
+                    'mspt':
+                        f'{(request_end - request_begin) / completion_tokens * 1000:.6f}'
+                }
                 benchmark_result = []
                 int_len = max(len(i.split('.')[0])
                     if isinstance(i,str) else
-                    len(str(i)) for i in benchmark_data)
-                for i in range(5):
-                    benchmark_result.append(benchmark_label[i])
+                    len(str(i)) for i in benchmark_data.values())
+                for m,n in benchmark_data.items():
+                    benchmark_result.append(m)
                     benchmark_result.append(
-                        benchmark_data[i].rjust(int_len + 7)
-                        if isinstance(benchmark_data[i],str) else
-                        str(benchmark_data[i]).rjust(int_len)
+                        n.rjust(int_len + 7)
+                        if isinstance(n,str) else
+                        str(n).rjust(int_len)
                     )
                 info_print(tuple(benchmark_result))
                 print()
@@ -746,6 +748,7 @@ def chat() -> None:
         ast_stream() if conf.get('stream') else ast_nostream()
 
 try:
+    # pylint: disable-next=unnecessary-lambda-assignment
     now_utc = lambda: datetime.now(timezone.utc)
     conf = conf_read()
     print()
