@@ -11,6 +11,7 @@
 > - KIMI：Moonshot Kimi，月之暗面
 > - QWEN：Qwen / Model Studio，阿里百炼
 > - SIF：SiliconFlow，硅基流动
+> - LEC：LeChat
 >
 > 体验金数据主要为个人注册时获取到的，可能有所变动。
 
@@ -18,13 +19,13 @@
 
 个人优先 QWEN 和 SIF 吧。
 
-DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗打，Kimi 小贵不如用 APP（那个 k1.5 没有 API 接口）。
+DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗打，Kimi 小贵不如用 APP（而且那个 k1.5 没有 API 接口），LeChat 是国外的。
 
 ## DS
 
 ### API KEY
 
-- [API KEY 管理页面](https://platform.deepseek.com/api_keys)
+- [API KEY 控制台](https://platform.deepseek.com/api_keys)
 
 ### 优势
 
@@ -46,7 +47,7 @@ DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗�
 
 ### API KEY
 
-- [API KEY 管理页面](https://bigmodel.cn/usercenter/apikeys)
+- [API KEY 控制台](https://bigmodel.cn/usercenter/apikeys)
 
 ### 优势
 
@@ -68,7 +69,7 @@ DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗�
 
 ### API KEY
 
-- [API KEY 管理页面](https://platform.moonshot.cn/console/api-keys)
+- [API KEY 控制台](https://platform.moonshot.cn/console/api-keys)
 
 ### 优势
 
@@ -88,7 +89,7 @@ DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗�
 
 ### API KEY
 
-- [API KEY 管理页面](https://bailian.console.aliyun.com/?apiKey=1#/api-key)
+- [API KEY 控制台](https://bailian.console.aliyun.com/?apiKey=1#/api-key)
 - [API KEY 获取教程](https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key)
 
 ### 优势
@@ -109,7 +110,8 @@ DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗�
 
 ### API KEY
 
-- [API KEY 管理页面](https://cloud.siliconflow.cn/account/ak)
+- [注册邀请码](https://cloud.siliconflow.cn/i/gwe5E9hK)
+- [API KEY 控制台](https://cloud.siliconflow.cn/account/ak)
 
 ### 优势
 
@@ -125,28 +127,28 @@ DeepSeek 官方容易繁忙（但是输出速度真快），智谱模型不抗�
 
 模型全部不能联网。
 
+## LEC
+
+### API KEY
+
+- [API KEY 控制台](https://console.mistral.ai/api-keys)
+
+### 优势
+
+国外的服务商（可能也只有它一家还给国内提供服务了罢），而且输出极快。
+
+所有模型都可以无限期免费体验（有较为严格的限速，不过只要不是多线程一般碰不到）。
+
+### 劣势
+
+毕竟是国外的，连接速度略慢；不能联网。
+
 ## 生成效果对比
 
 使用相同的提示词：如何界定依赖 AI 与合理运用 AI？
 
-### deepseek-chat vs glm-4-flash vs kimi-latest vs qwen-max-latest
+### deepseek-chat vs glm-4-plus vs kimi-latest vs qwen-max-latest vs mistral-large-latest
 
-v1
-
-当然这个对智谱有些不公平，没有用最好的旗舰打……但没办法，我没钱了，有钱再录一个。
-
-视频没处理完，改天再放。
+### deepseek-ai/DeepSeek-R1 vs Qwen/QwQ-32B
 
 ### deepseek-reasoner vs deepseek-r1 vs deepseek-ai/DeepSeek-R1
-
-v2~v5
-
-这个就是速度比拼了。
-
-TL;DR：官方落后二十余秒，但和硅基流动几乎同时结束；之前阿里百炼快要慢死了，用时感觉像是另外两个的两倍多，现在也挺快。
-
-视频没处理完，改天再放。
-
-### deepseek-reasoner vs qwq-plus-latest
-
-敬请期待

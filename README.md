@@ -52,6 +52,7 @@
    - KIMI：Moonshot Kimi，月之暗面
    - QWEN：Qwen / Model Studio，阿里百炼
    - SIF：SiliconFlow，硅基流动
+   - LEC：LeChat
 4. 输入 Temperature。以下简要信息限于「不会报错」。  
    - 因为设了也没有作用，deepseek-reasoner 不展示此条。
    - 温度数值越低，对于相同的输入，输出越稳定；越高则相反，但设置过高可能出现乱码等情况。
@@ -60,6 +61,7 @@
    - 对于 GLM，这是范围 [0,1] 的两位小数。更多信息见 [官方说明](https://bigmodel.cn/dev/api/parameter-description)。
    - 对于 Kimi，这是范围 [0,2] 的两位小数。更多信息见 [官方说明](https://platform.moonshot.cn/docs/api/chat#%E5%AD%97%E6%AE%B5%E8%AF%B4%E6%98%8E)。
    - 对于 Qwen 中的大部分，这是范围 [0,2) 的两位小数。更多信息见[官方说明](https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api)。
+   - 对于 LeChat，这是范围 [0,1.5] 的两位小数。更多信息见 [官方说明](https://docs.mistral.ai/api/)。
 5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。因为[官方不建议设](https://github.com/deepseek-ai/DeepSeek-R1)，deepseek-reasoner 不展示此条。
 6. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
 7. 等待回复。回复完成后，可以继续重复第 6 步，也可以直接敲回车终止对话。
@@ -74,7 +76,7 @@ pip install -r requirements.txt
 pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 ```
 
-如需最新测试版，请在切换到 `develop` 分支后，使用相同命令进行打包。（属性中的版本号可能显示为旧版。）
+如需最新测试版，请在切换到 `develop` 分支后，使用相同命令进行打包。(属性中的版本号可能显示为旧版。)
 
 ## FAQ
 
@@ -165,7 +167,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 已使用 GitHub Actions 实现。如果您需要在其他系统上运行此程序，请提交 issues。
 
-但出于未知原因，Termux 仍暂不支持（显示为 `error: required file not found`）；请使用源码执行。
+但出于未知原因，Termux 仍暂不支持 (显示为 `error: required file not found`)；请使用源码执行。
 
 </details>
 
@@ -175,7 +177,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 ### sk.json
 
-注：新版的 `sk.json` 配置文件有较大概率和旧版不兼容。建议在更新后根据最新模板重新配置 `sk.json`，并同时查看新功能！
+注：新版的 `sk.json` 配置文件有较大概率和旧版不能完全兼容。建议在更新后根据最新模板重新配置 `sk.json`，并同时查看新功能！
 
 <details>
 
@@ -203,6 +205,11 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
     选填项，默认为 `[]`。
   - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
     选填项，默认为 `false`。
+  - `benchmark`：`dict`。设定基准测试。选填项。
+    - `enable`：`bool`。设定为 `true` 时进行基准测试，反之不进行。  
+      选填项，默认为 `false`。但如果不设置此项，下一项无效。
+    - `long`：`bool`。设定为 `true` 时显示长信息 (原始时间戳)，反之不显示。
+      选填项，默认为 `false`。
 - `service`：`dict`。具体配置各大模型的信息。必填项。
   - `DS`：`dict`。配置 DeepSeek 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
@@ -226,8 +233,6 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - codegeex-4
       - charglm-4
       - emohaa
-    - `jwt`：`bool`。指定在传输时是否使用 jwt 对 KEY 进行加密 (即使用鉴权 token 进行鉴权)。  
-      选填项，默认为 `True`。这不影响直接传入鉴权 token。
   - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -282,6 +287,18 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - TeleAI/TeleChat2
     - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
       选填项，默认为 `false`。
+  - `LEC`：`dict`。配置 LeChat 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - mistral-large-latest
+      - mistral-small-latest
+      - open-mistral-nemo
+      - codestral-latest
+      - open-codestral-mamba
+      - ministral-3b-latest
+      - ministral-8b-latest
 
 </details>
 </details>
@@ -317,3 +334,4 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - [Kimi API Docs](https://platform.moonshot.cn/docs/intro)
 - [ModelStudio API Docs](https://help.aliyun.com/zh/model-studio/)
 - [SiliconFlow API Docs](https://docs.siliconflow.cn/cn/userguide/introduction)
+- [LeChat API Docs](https://docs.mistral.ai/)
