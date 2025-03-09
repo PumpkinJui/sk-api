@@ -197,7 +197,8 @@ def info_print(lt:tuple) -> None:
     lt = [i.split('/')[1] if '/' in i else i for i in lt]
     max_len_former = max(len(n) for m,n in enumerate(lt) if m % 2 == 0)
     max_len_latter = max(len(n) for m,n in enumerate(lt) if m % 2 == 1)
-    if max_len_former <= 18 and max_len_latter <= 25:
+    if (max_len_former <= 18 and max_len_latter <= 25) or \
+       (max_len_former <= 26 and max_len_latter <= 18):
         k = 0
         while k < len(lt):
             # pylint: disable-next=expression-not-assigned
@@ -372,6 +373,10 @@ def payload_gen() -> str:
         "temperature": conf.get('temp'),
         "stream": conf.get('stream')
     }
+    if conf.get('stream') and conf.get('full_name') != 'LeChat':
+        payload['stream_options'] = {
+            'include_usage': True
+        }
     if conf.get('tool_use') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
@@ -580,6 +585,8 @@ def ast_stream() -> None:
     conf['tool_lt'] = []
     conf['tool'] = {'role': 'tool'}
     conf['tool_index'] = 0
+    last = ''
+    req_begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -599,10 +606,13 @@ def ast_stream() -> None:
                 data = line.decode('utf-8')[len('data:'):].strip()
                 if data == '[DONE]':
                     break
-                if error_detail := json.loads(data).get('error'):
+                data = json.loads(data)
+                last = data
+                if error_detail := data.get('error'):
                     print()
                     exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
-                if not (delta_lt := json.loads(data).get('choices')[0].get('delta')):
+                if not (choices := data.get('choices')) or \
+                   not (delta_lt := choices[0].get('delta')):
                     continue
                 delta_process(delta_lt)
         if len(conf.get('tool')) != 1:
@@ -614,6 +624,12 @@ def ast_stream() -> None:
             conf['msg'].append({'role': 'assistant', 'content': conf.get('ast')})
             print()
             print()
+            if conf.get('benchmark'):
+                benchmark(
+                    req_begin,
+                    now_utc().timestamp(),
+                    last.get('usage').get('completion_tokens')
+                )
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -622,6 +638,9 @@ def ast_stream() -> None:
         ))
 
 def delta_process(delta_lt:str) -> None:
+    if (not conf.get('ast') and delta_lt.get('content')) or \
+       (conf.get('gocon') and delta_lt.get('reasoning_content')):
+        conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf['ast'] and delta.lstrip('\n') != delta:
@@ -675,16 +694,31 @@ def tool_append(tool_lt:list) -> None:
 
 def benchmark(req_begin:float,end:float,tokens:int) -> None:
     print(f'BENCHMARK #{conf.get("rnd")}')
-    data = {
-        'request_begin': f'{req_begin:.6f}',
-        'request_end': f'{end:.6f}',
-        'request_duration': f'{end - req_begin:.6f}',
-        'completion_tokens': tokens,
-        'tps':
-            f'{tokens / (end - req_begin):.6f}',
-        'mspt':
-            f'{(end - req_begin) / tokens * 1000:.6f}'
-    }
+    if first := conf.get('first_token',None):
+        data = {
+            'request_begin': f'{req_begin:.6f}',
+            'first_token': f'{first:.6f}',
+            'request_end': f'{end:.6f}',
+            'request_duration': f'{end - req_begin:.6f}',
+            'request_queue': f'{first - req_begin:.6f}',
+            'completion_duration': f'{end - first:.6f}',
+            'completion_tokens': tokens,
+            'tokens_per_second':
+                f'{tokens / (end - first):.6f}',
+            'milliseconds_per_token':
+                f'{(end - first) / tokens * 1000:.6f}'
+        }
+    else:
+        data = {
+            'request_begin': f'{req_begin:.6f}',
+            'request_end': f'{end:.6f}',
+            'request_duration': f'{end - req_begin:.6f}',
+            'completion_tokens': tokens,
+            'tokens_per_second':
+                f'{tokens / (end - req_begin):.6f}',
+            'milliseconds_per_token':
+                f'{(end - req_begin) / tokens * 1000:.6f}'
+        }
     result = []
     int_len = max(len(i.split('.')[0])
         if isinstance(i,str) else
