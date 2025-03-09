@@ -585,6 +585,7 @@ def ast_stream() -> None:
     conf['tool_lt'] = []
     conf['tool'] = {'role': 'tool'}
     conf['tool_index'] = 0
+    conf['first_token'] = None
     last = ''
     req_begin = now_utc().timestamp()
     rsp = requests.request(
@@ -638,7 +639,8 @@ def ast_stream() -> None:
         ))
 
 def delta_process(delta_lt:str) -> None:
-    if (not conf.get('ast') and delta_lt.get('content')) or \
+    if not conf['first_token'] and \
+       (not conf.get('ast') and delta_lt.get('content')) or \
        (conf.get('gocon') and delta_lt.get('reasoning_content')):
         conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
