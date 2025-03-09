@@ -53,6 +53,7 @@ The function system structure: (arguments omitted)
   - ast_stream()
     - delta_process()
     - tool_append()
+  - benchmark()
 
 The actual writing and running order may vary.
 
@@ -530,7 +531,7 @@ def emohaa_meta_get() -> dict:
     return meta
 
 def ast_nostream() -> None:
-    request_begin = now_utc().timestamp()
+    req_begin = now_utc().timestamp()
     rsp = requests.request(
         "POST",
         conf.get('cht_url'),
@@ -561,32 +562,11 @@ def ast_nostream() -> None:
         else:
             print('\n')
             if conf.get('benchmark'):
-                request_end = now_utc().timestamp()
-                print(f'BENCHMARK #{conf.get("rnd")}')
-                completion_tokens = json.loads(rsp.text).get('usage').get('completion_tokens')
-                benchmark_data = {
-                    'request_begin': f'{request_begin:.6f}',
-                    'request_end': f'{request_end:.6f}',
-                    'request_duration': f'{request_end - request_begin:.6f}',
-                    'completion_tokens': completion_tokens,
-                    'tps':
-                        f'{completion_tokens / (request_end - request_begin):.6f}',
-                    'mspt':
-                        f'{(request_end - request_begin) / completion_tokens * 1000:.6f}'
-                }
-                benchmark_result = []
-                int_len = max(len(i.split('.')[0])
-                    if isinstance(i,str) else
-                    len(str(i)) for i in benchmark_data.values())
-                for m,n in benchmark_data.items():
-                    benchmark_result.append(m)
-                    benchmark_result.append(
-                        n.rjust(int_len + 7)
-                        if isinstance(n,str) else
-                        str(n).rjust(int_len)
-                    )
-                info_print(tuple(benchmark_result))
-                print()
+                benchmark(
+                    req_begin,
+                    now_utc().timestamp(),
+                    json.loads(rsp.text).get('usage').get('completion_tokens')
+                )
     else:
         # pylint: disable-next=consider-using-f-string
         exitc('ERR: {} {}'.format(
@@ -692,6 +672,32 @@ def tool_append(tool_lt:list) -> None:
     })
     for i in tool_lt:
         conf['msg'].append(i)
+
+def benchmark(req_begin:float,end:float,tokens:int) -> None:
+    print(f'BENCHMARK #{conf.get("rnd")}')
+    data = {
+        'request_begin': f'{req_begin:.6f}',
+        'request_end': f'{end:.6f}',
+        'request_duration': f'{end - req_begin:.6f}',
+        'completion_tokens': tokens,
+        'tps':
+            f'{tokens / (end - req_begin):.6f}',
+        'mspt':
+            f'{(end - req_begin) / tokens * 1000:.6f}'
+    }
+    result = []
+    int_len = max(len(i.split('.')[0])
+        if isinstance(i,str) else
+        len(str(i)) for i in data.values())
+    for m,n in data.items():
+        result.append(m)
+        result.append(
+            n.rjust(int_len + 7)
+            if isinstance(n,str) else
+            str(n).rjust(int_len)
+        )
+    info_print(tuple(result))
+    print()
 
 # pylint: disable-next=inconsistent-return-statements
 def balance_chk() -> str:
