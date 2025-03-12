@@ -331,8 +331,8 @@ def service_infoget(service:str) -> dict:
         },
         'SIF': {
             'full_name': 'SiliconFlow',
-            'cht_url': 'https://api.siliconflow.com/v1/chat/completions',
-            'chk_url': 'https://api.siliconflow.com/v1/user/info',
+            'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
+            'chk_url': 'https://api.siliconflow.cn/v1/user/info',
             'max_tokens': 4096,
             'temp_range': {
                 'max_temp': 2,
