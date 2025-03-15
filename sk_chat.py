@@ -570,7 +570,8 @@ def ast_nostream() -> None:
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
-                    json.loads(rsp.text).get('usage').get('completion_tokens')
+                    json.loads(rsp.text).get('usage').get('completion_tokens'),
+                    json.loads(rsp.text).get('usage').get('prompt_tokens')
                 )
     else:
         # pylint: disable-next=consider-using-f-string
@@ -629,7 +630,8 @@ def ast_stream() -> None:
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
-                    last.get('usage').get('completion_tokens')
+                    last.get('usage').get('completion_tokens'),
+                    last.get('usage').get('prompt_tokens')
                 )
     else:
         # pylint: disable-next=consider-using-f-string
@@ -694,32 +696,34 @@ def tool_append(tool_lt:list) -> None:
     for i in tool_lt:
         conf['msg'].append(i)
 
-def benchmark(req_begin:float,end:float,tokens:int) -> None:
+def benchmark(req_begin:float,end:float,c_tokens:int,p_tokens:int) -> None:
     print(f'BENCHMARK #{conf.get("rnd")}')
     if first := conf.get('first_token',None):
         data = {
             'request_begin': f'{req_begin:.6f}',
             'first_token': f'{first:.6f}',
             'request_end': f'{end:.6f}',
-            'request_duration': f'{end - req_begin:.6f}',
-            'request_queue': f'{first - req_begin:.6f}',
-            'completion_duration': f'{end - first:.6f}',
-            'completion_tokens': tokens,
+            'latency': f'{end - req_begin:.6f}',
+            'time_to_first_token': f'{first - req_begin:.6f}',
+            'generation_time': f'{end - first:.6f}',
+            'prompt_tokens': p_tokens,
+            'completion_tokens': c_tokens,
             'tokens_per_second':
-                f'{tokens / (end - first):.6f}',
-            'milliseconds_per_token':
-                f'{(end - first) / tokens * 1000:.6f}'
+                f'{c_tokens / (end - first):.6f}',
+            'time_per_output_token':
+                f'{(end - first) / (c_tokens - 1) * 1000:.6f}'
         }
     else:
         data = {
             'request_begin': f'{req_begin:.6f}',
             'request_end': f'{end:.6f}',
-            'request_duration': f'{end - req_begin:.6f}',
-            'completion_tokens': tokens,
+            'latency': f'{end - req_begin:.6f}',
+            'prompt_tokens': p_tokens,
+            'completion_tokens': c_tokens,
             'tokens_per_second':
-                f'{tokens / (end - req_begin):.6f}',
-            'milliseconds_per_token':
-                f'{(end - req_begin) / tokens * 1000:.6f}'
+                f'{c_tokens / (end - req_begin):.6f}',
+            'time_per_output_token':
+                f'{(end - req_begin) / c_tokens * 1000:.6f}'
         }
     if not conf.get('benchmark').get('long'):
         __ = [data.pop(i,None) for i in ('request_begin','request_end','first_token')]
