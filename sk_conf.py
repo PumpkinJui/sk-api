@@ -44,6 +44,10 @@ checklt_ori = {
         "LEC": ({
             "KEY": ("", True),
             "model": ("prompt", False),
+        }, False),
+        "SLI": ({
+            "KEY": ("", True),
+            "model": ("prompt", False),
         }, False)
     }, True)
 }
@@ -398,6 +402,24 @@ def service_infoget(service:str) -> dict:
                 },
                 'ministral-3b-latest': {},
                 'ministral-8b-latest': {}
+            }
+        },
+        'SLI': {
+            'full_name': 'SuanLi',
+            'cht_url': 'https://api.suanli.cn/v1/chat/completions',
+            'reasoner': True,
+            'models': {
+                'deepseek-r1': {},
+                'deepseek-r1:7b': {
+                    'free': True
+                },
+                'deepseek-v3': {},
+                'QwQ-32B': {
+                    'free': True
+                },
+                'free:QwQ-32B': {
+                    'free': True
+                }
             }
         }
     }

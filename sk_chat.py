@@ -52,6 +52,7 @@ The function system structure: (arguments omitted)
   - ast_nostream()
   - ast_stream()
     - delta_process()
+      - tool_process()
     - tool_append()
   - benchmark()
 
@@ -120,8 +121,8 @@ def conf_read() -> dict:
         conf_r.get('prompt_control').get('free_only')
     )
     conf_r.update(model_info)
-    conf_r.update(conf_r.get('temp_range'))
-    del conf_r['models'], conf_r['temp_range']
+    conf_r.update(conf_r.get('temp_range',{}))
+    __ = [conf_r.pop(i,None) for i in ('models','temp_range')]
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
     for i in nested:
@@ -388,7 +389,7 @@ def payload_gen() -> str:
     }:
         payload['enable_search'] = True
     payload_json = json.dumps(payload)
-    # print(conf.get('msg'),payload_json,sep='\n')
+    # print(conf.get('msg'),payload_json,sep='\n\n',end='\n\n')
     return payload_json
 
 def temp_get() -> float:
@@ -647,33 +648,41 @@ def delta_process(delta_lt:str) -> None:
         conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
-        if not conf['ast'] and delta.lstrip('\n') != delta:
-            delta = delta.lstrip('\n')
+        if not conf.get('ast'):
+            if delta.lstrip('\n') != delta:
+                delta = delta.lstrip('\n')
+            if not conf.get('gocon') and \
+               not delta_lt.get('reasoning_content') and delta:
+                print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+                conf['gocon'] = True
         conf['ast'] += delta
-        if not conf.get('gocon') and \
-           not delta_lt.get('reasoning_content') and delta_lt.get('content'):
-            print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
-            conf['gocon'] = True
+        if delta in {'<think>','</think>'}:
+            if delta == '</think>':
+                conf['gocon'] = False
+            conf['ast'] = ''
+            delta = ''
     else:
         if delta := delta_lt.get('reasoning_content'):
             if conf.get('gocon') and delta.lstrip('\n') != delta:
                 delta = delta.lstrip('\n')
             conf['gocon'] = False
         elif delta := delta_lt.get('tool_calls'):
-            delta = delta[0]
-            index = delta.get('index')
-            if index != conf.get('tool_index'):
-                conf['tool_index'] += 1
-                conf['tool_lt'].append(conf.get('tool'))
-            if delta.get('id'):
-                conf['tool']['tool_call_id'] = delta.get('id')
-                conf['tool']['name'] = delta.get('function').get('name')
-            else:
-                conf['tool']['content'] = delta.get('function').get('arguments')
+            tool_process(delta[0])
             delta = ''
         else:
             delta = ''
     print(delta,end='',flush=True)
+
+def tool_process(delta_tool:dict) -> None:
+    index = delta_tool.get('index')
+    if index != conf.get('tool_index'):
+        conf['tool_index'] += 1
+        conf['tool_lt'].append(conf.get('tool'))
+    if delta_tool.get('id'):
+        conf['tool']['tool_call_id'] = delta_tool.get('id')
+        conf['tool']['name'] = delta_tool.get('function').get('name')
+    else:
+        conf['tool']['content'] = delta_tool.get('function').get('arguments')
 
 def tool_append(tool_lt:list) -> None:
     tool_ast_lt = []
