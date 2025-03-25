@@ -211,7 +211,7 @@ def info_print(lt:tuple) -> None:
         __ = [print('INF:',i) for i in lt]
 
 def sel_guess(chn:str,sel:str) -> bool:
-    mdlist = ('deepseek','glm','qwen')
+    mdlist = {'deepseek','glm','qwen','doubao'}
     seld = sel.split('/',1)[1].lower() if '/' in sel else sel.lower()
     sell = seld.split('-',1)
     selp = sell[1] if '-' in seld and sell[0] in mdlist else seld

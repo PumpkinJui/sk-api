@@ -43,11 +43,15 @@ checklt_ori = {
         }, False),
         "LEC": ({
             "KEY": ("", True),
-            "model": ("prompt", False),
+            "model": ("prompt", False)
         }, False),
         "SLI": ({
             "KEY": ("", True),
-            "model": ("prompt", False),
+            "model": ("prompt", False)
+        }, False),
+        "ARK": ({
+            "KEY": ("", True),
+            "model": ("prompt", False)
         }, False)
     }, True)
 }
@@ -105,11 +109,18 @@ def key_check(key_conf:dict) -> dict: # specific
     if ser := key_conf.get('service'):
         for m,n in ser.items():
             # print(m,n)
+            if not n.get('KEY').isascii():
+                print(f'The KEY for {m} should contain ASCII characters only.')
+                return {}
             if m == 'LEC':
                 return key_conf
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
+                    return {}
+            elif m == 'ARK':
+                if len(n.get('KEY').split('-')) != 5:
+                    print('The KEY for ARK should be split into 5 parts by "-".')
                     return {}
             else:
                 if n.get('KEY')[:3] != 'sk-':
@@ -419,6 +430,27 @@ def service_infoget(service:str) -> dict:
                 },
                 'free:QwQ-32B': {
                     'free': True
+                }
+            }
+        },
+        'ARK': {
+            'full_name': 'VolcanoArk',
+            'cht_url': 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.8
+            },
+            'max_tokens': 12288,
+            'models': {
+                'doubao-1.5-pro-32k-250115': {},
+                'doubao-1.5-pro-256k-250115': {},
+                'doubao-1.5-lite-32k-250115': {},
+                'deepseek-r1-250120': {
+                    'reasoner': True,
+                    'max_tokens': 16384
+                },
+                'deepseek-v3-241226': {
+                    'max_tokens': 16384
                 }
             }
         }
