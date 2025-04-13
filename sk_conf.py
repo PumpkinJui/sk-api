@@ -47,7 +47,7 @@ checklt_ori = {
             "KEY": ("", True),
             "model": ("prompt", False)
         }, False),
-        "SLI": ({
+        "FQWQ": ({
             "KEY": ("", True),
             "model": ("prompt", False),
             "free_only": (False, False)
@@ -418,8 +418,8 @@ def service_infoget(service:str) -> dict:
                 'ministral-8b-latest': {}
             }
         },
-        'SLI': {
-            'full_name': 'SuanLi',
+        'FQWQ': {
+            'full_name': 'FreeQwQ',
             'cht_url': 'https://api.suanli.cn/v1/chat/completions',
             'reasoner': True,
             'models': {
@@ -433,7 +433,8 @@ def service_infoget(service:str) -> dict:
                 },
                 'free:QwQ-32B': {
                     'free': True
-                }
+                },
+                'pro:QwQ-32B': {}
             }
         },
         'ARK': {
