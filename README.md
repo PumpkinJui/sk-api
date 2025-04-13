@@ -333,6 +333,10 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - doubao-1.5-lite-32k-250115
       - deepseek-r1-250120
       - deepseek-v3-250324
+      - moonshot-v1-8k
+      - moonshot-v1-32k
+      - moonshot-v1-128k
+      - mistral-7b-instruct-v0.2
 
 </details>
 </details>
