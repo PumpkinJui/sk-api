@@ -1,7 +1,7 @@
 # sk-api
 
 ![Create At: 2025-01-09.](https://img.shields.io/github/created-at/PumpkinJui/sk-api?style=for-the-badge&logo=github&logoColor=white&color=477DB2)
-[![License: CC BY 4.0.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
+[![License: MIT.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
 ![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=python&logoColor=white&color=477DB2)
 
 ![GitHub Release: The latest release name.](https://img.shields.io/github/v/release/PumpkinJui/sk-api?display_name=tag&style=for-the-badge&color=limegreen)
@@ -53,15 +53,18 @@
    - QWEN：Qwen / Model Studio，阿里百炼
    - SIF：SiliconFlow，硅基流动
    - LEC：LeChat
+   - FQWQ：Free QwQ
+   - ARK：VolcanoArk，火山方舟
 4. 输入 Temperature。以下简要信息限于「不会报错」。  
    - 因为设了也没有作用，deepseek-reasoner 不展示此条。
    - 温度数值越低，对于相同的输入，输出越稳定；越高则相反，但设置过高可能出现乱码等情况。
    - 如不提供，将会自动使用默认值；默认值见输入错误时的说明。
-   - 对于 DS，这是范围 [0,2] 的两位小数。更多信息见 [官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。
-   - 对于 GLM，这是范围 [0,1] 的两位小数。更多信息见 [官方说明](https://bigmodel.cn/dev/api/parameter-description)。
-   - 对于 Kimi，这是范围 [0,2] 的两位小数。更多信息见 [官方说明](https://platform.moonshot.cn/docs/api/chat#%E5%AD%97%E6%AE%B5%E8%AF%B4%E6%98%8E)。
+   - 对于 DS，这是范围 [0,2] 的两位小数。更多信息见[官方说明](https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings)。
+   - 对于 GLM，这是范围 [0,1] 的两位小数。更多信息见[官方说明](https://bigmodel.cn/dev/api/parameter-description)。
+   - 对于 Kimi，这是范围 [0,2] 的两位小数。更多信息见[官方说明](https://platform.moonshot.cn/docs/api/chat#%E5%AD%97%E6%AE%B5%E8%AF%B4%E6%98%8E)。
    - 对于 Qwen 中的大部分，这是范围 [0,2) 的两位小数。更多信息见[官方说明](https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api)。
-   - 对于 LeChat，这是范围 [0,1.5] 的两位小数。更多信息见 [官方说明](https://docs.mistral.ai/api/)。
+   - 对于 LeChat，这是范围 [0,1.5] 的两位小数。更多信息见[官方说明](https://docs.mistral.ai/api/)。
+   - 对于 VolcanoArk，这是范围 [0,1] 的两位小数。更多信息见[官方说明](https://www.volcengine.com/docs/82379/1298454)。
 5. 输入 System Prompt。建议将 AI 的身份设定输入在此处。可留空，有默认设定。末尾会自动追加当前 UTC 时间，精确到秒。因为[官方不建议设](https://github.com/deepseek-ai/DeepSeek-R1)，deepseek-reasoner 不展示此条。
 6. 输入 User Prompt。支持多行，输入空行视为终止符。留空则终止对话。(这意味着，在输入该轮对话所有内容后需要**敲两次回车**才能触发回复！)
 7. 等待回复。回复完成后，可以继续重复第 6 步，也可以直接敲回车终止对话。
@@ -122,7 +125,7 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 
 本程序采用 [MIT](LICENSE) 授权，完全免费。
 
-各家 AI 对于网页对话来说*是免费的*；对于 API 请求*则不是*。
+各家 AI 对于网页对话来说*是免费的*；对于 API 请求*则基本不是*。
 
 具体定价见官方文档。
 
@@ -130,6 +133,10 @@ API 更为灵活，因此可以在网页对话之外的众多场景中使用。
 - [GLM](https://open.bigmodel.cn/pricing)
 - [Kimi](https://platform.moonshot.cn/docs/pricing/chat)
 - [Qwen](https://help.aliyun.com/zh/model-studio/getting-started/models)
+- [SiliconFlow](https://cloud.siliconflow.cn/models)
+- [LeChat](https://mistral.ai/en/products/la-plateforme#pricing)
+- [Free QwQ](https://api.suanli.cn/pricing)
+- [VolcanoArk](https://www.volcengine.com/docs/82379/1099320)
 
 </details>
 
@@ -188,7 +195,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
   选填项，默认为 `true`。
 - `autotime`：`bool`。设定为 `true` 时，自动在系统提示词中追加当前 UTC 时间，格式为 `%Y-%m-%d %H:%M:%S`；`false` 禁用。  
-  开启后，可能触发意想不到的回复 (特别是 `deepseek-reasoner` 模型)。  
+  开启后，可能触发意想不到的回复。  
   选填项，默认为 `true`。
 - `prompt_control`：`dict`。配置输出控制。选填项。
   - `balance_chk`：`bool`。设定为 `true` 时，查询账户余额后再进行对话；`false` 直接进行对话，不查询余额。  
@@ -203,8 +210,6 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
   - `hidden_models`：`list`。将模型全称区分大小写地填入其中，填写的模型将不会在询问时展示；该列表对全部服务适用。模型名称请以选择成功时的提示结果为准，不要以选择列表或重映射信息为准。  
     注：此处的模型名称填写规则对下文亦适用。  
     选填项，默认为 `[]`。
-  - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
-    选填项，默认为 `false`。
   - `benchmark`：`dict`。设定基准测试。选填项。
     - `enable`：`bool`。设定为 `true` 时进行基准测试，反之不进行。  
       选填项，默认为 `false`。但如果不设置此项，下一项无效。
@@ -233,6 +238,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - codegeex-4
       - charglm-4
       - emohaa
+    - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
+    选填项，默认为 `false`。
   - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -267,6 +274,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - latest
       - stable
       - oss
+    - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
+    选填项，默认为 `false`。
   - `SIF`：`dict`。配置 SiliconFlow 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -287,6 +296,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - TeleAI/TeleChat2
     - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
       选填项，默认为 `false`。
+    - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
+    选填项，默认为 `false`。
   - `LEC`：`dict`。配置 LeChat 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -299,6 +310,29 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - open-codestral-mamba
       - ministral-3b-latest
       - ministral-8b-latest
+  - `FQWQ`：`dict`。配置 Free QwQ 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - deepseek-r1
+      - deepseek-r1:7b
+      - deepseek-v3
+      - QwQ-32B
+      - free:QwQ-32B
+      - pro:QwQ-32B
+    - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
+    选填项，默认为 `false`。
+  - `ARK`：`dict`。配置 VolcanoArk 的信息。选填项。
+    - `KEY`：`str`。API KEY。必填项。
+    - `model`：`str`。选择使用的模型。  
+      选填项，默认为 `prompt`。可选项包括：
+      - prompt
+      - doubao-1.5-pro-32k-250115
+      - doubao-1.5-pro-256k-250115
+      - doubao-1.5-lite-32k-250115
+      - deepseek-r1-250120
+      - deepseek-v3-250324
 
 </details>
 </details>
@@ -335,3 +369,5 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - [ModelStudio API Docs](https://help.aliyun.com/zh/model-studio/)
 - [SiliconFlow API Docs](https://docs.siliconflow.cn/cn/userguide/introduction)
 - [LeChat API Docs](https://docs.mistral.ai/)
+- [Free QwQ API Docs](https://api.suanli.cn/)
+- [VolcanoArk API Docs](https://www.volcengine.com/docs/82379/)
