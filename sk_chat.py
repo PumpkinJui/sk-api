@@ -110,7 +110,7 @@ def conf_read() -> dict:
         model_hidden_set = set(conf_r.get('prompt_control').get('hidden_models'))
     except TypeError:
         print('WRN: Invalid prompt_control.hidden_models.')
-        midel_hidden_set = set()
+        model_hidden_set = set()
     model_display = {
         m: n for m, n in service_info.get('models').items()
         if m not in model_hidden_set
@@ -158,6 +158,11 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
             if chn:
                 for i in lt:
                     if sel_guess(chn,i):
+                        lst[i][keyword] = i
+                        return lst[i]
+                for i in lt:
+                    if chn in i:
+                        print(f'INF: Selection guessed: {chn}. Accepted.')
                         lst[i][keyword] = i
                         return lst[i]
             print('ERR: Selection invalid.')

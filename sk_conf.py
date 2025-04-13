@@ -442,7 +442,7 @@ def service_infoget(service:str) -> dict:
             'cht_url': 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
             'temp_range': {
                 'max_temp': 1,
-                'default_temp': 0.8
+                'default_temp': 0.80
             },
             'max_tokens': 12288,
             'models': {
