@@ -12,7 +12,6 @@ checklt_ori = {
         "show_temp": (True, False),
         "show_system": (True, False),
         "hidden_models": ([], False),
-        "free_only": (False, False),
         "benchmark": ({
             "enable": (False, False),
             "long": (False, False)
@@ -25,7 +24,8 @@ checklt_ori = {
         }, False),
         "GLM": ({
             "KEY": ("", True),
-            "model": ("prompt", False)
+            "model": ("prompt", False),
+            "free_only": (False, False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),
@@ -34,12 +34,14 @@ checklt_ori = {
         "QWEN": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "version": ("latest", False)
+            "version": ("latest", False),
+            "free_only": (False, False)
         }, False),
         "SIF": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "pro": (False, False)
+            "pro": (False, False),
+            "free_only": (False, False)
         }, False),
         "LEC": ({
             "KEY": ("", True),
@@ -47,7 +49,8 @@ checklt_ori = {
         }, False),
         "SLI": ({
             "KEY": ("", True),
-            "model": ("prompt", False)
+            "model": ("prompt", False),
+            "free_only": (False, False)
         }, False),
         "ARK": ({
             "KEY": ("", True),
@@ -449,7 +452,7 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True,
                     'max_tokens': 16384
                 },
-                'deepseek-v3-241226': {
+                'deepseek-v3-250324': {
                     'max_tokens': 16384
                 }
             }

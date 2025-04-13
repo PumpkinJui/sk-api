@@ -109,7 +109,8 @@ def conf_read() -> dict:
     try:
         model_hidden_set = set(conf_r.get('prompt_control').get('hidden_models'))
     except TypeError:
-        exitc('ERR: Invalid prompt_control.hidden_models.')
+        print('WRN: Invalid prompt_control.hidden_models.')
+        midel_hidden_set = set()
     model_display = {
         m: n for m, n in service_info.get('models').items()
         if m not in model_hidden_set
@@ -118,7 +119,7 @@ def conf_read() -> dict:
         'model',
         model_display,
         conf_r.get('model','prompt'),
-        conf_r.get('prompt_control').get('free_only')
+        conf_r.get('free_only')
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
@@ -242,7 +243,7 @@ def model_remap(remap_conf:dict) -> dict:
         del remap_conf['version']
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
-       not remap_conf.get('prompt_control').get('free_only'):
+       not remap_conf.get('free_only'):
         model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         remap_conf['model'] = model
         if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
