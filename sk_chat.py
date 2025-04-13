@@ -52,6 +52,7 @@ The function system structure: (arguments omitted)
   - ast_nostream()
   - ast_stream()
     - delta_process()
+      - tool_process()
     - tool_append()
   - benchmark()
 
@@ -108,7 +109,8 @@ def conf_read() -> dict:
     try:
         model_hidden_set = set(conf_r.get('prompt_control').get('hidden_models'))
     except TypeError:
-        exitc('ERR: Invalid prompt_control.hidden_models.')
+        print('WRN: Invalid prompt_control.hidden_models.')
+        model_hidden_set = set()
     model_display = {
         m: n for m, n in service_info.get('models').items()
         if m not in model_hidden_set
@@ -117,11 +119,11 @@ def conf_read() -> dict:
         'model',
         model_display,
         conf_r.get('model','prompt'),
-        conf_r.get('prompt_control').get('free_only')
+        conf_r.get('free_only')
     )
     conf_r.update(model_info)
-    conf_r.update(conf_r.get('temp_range'))
-    del conf_r['models'], conf_r['temp_range']
+    conf_r.update(conf_r.get('temp_range',{}))
+    __ = [conf_r.pop(i,None) for i in ('models','temp_range')]
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
     for i in nested:
@@ -138,6 +140,8 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
         lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
+        print('WRN: Use it at your own risk.')
+        return {keyword: sts}
     if sts != 'prompt' and sts in lt:
         print(f'INF: {keyword.capitalize()} {sts} selected.')
         lst[sts][keyword] = sts
@@ -154,6 +158,11 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
             if chn:
                 for i in lt:
                     if sel_guess(chn,i):
+                        lst[i][keyword] = i
+                        return lst[i]
+                for i in lt:
+                    if chn in i:
+                        print(f'INF: Selection guessed: {chn}. Accepted.')
                         lst[i][keyword] = i
                         return lst[i]
             print('ERR: Selection invalid.')
@@ -210,7 +219,7 @@ def info_print(lt:tuple) -> None:
         __ = [print('INF:',i) for i in lt]
 
 def sel_guess(chn:str,sel:str) -> bool:
-    mdlist = ('deepseek','glm','qwen')
+    mdlist = {'deepseek','glm','qwen','doubao'}
     seld = sel.split('/',1)[1].lower() if '/' in sel else sel.lower()
     sell = seld.split('-',1)
     selp = sell[1] if '-' in seld and sell[0] in mdlist else seld
@@ -241,7 +250,7 @@ def model_remap(remap_conf:dict) -> dict:
         del remap_conf['version']
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
-       not remap_conf.get('prompt_control').get('free_only'):
+       not remap_conf.get('free_only'):
         model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         remap_conf['model'] = model
         if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
@@ -388,7 +397,7 @@ def payload_gen() -> str:
     }:
         payload['enable_search'] = True
     payload_json = json.dumps(payload)
-    # print(conf.get('msg'),payload_json,sep='\n')
+    # print(conf.get('msg'),payload_json,sep='\n\n',end='\n\n')
     return payload_json
 
 def temp_get() -> float:
@@ -570,7 +579,8 @@ def ast_nostream() -> None:
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
-                    json.loads(rsp.text).get('usage').get('completion_tokens')
+                    json.loads(rsp.text).get('usage').get('completion_tokens'),
+                    json.loads(rsp.text).get('usage').get('prompt_tokens')
                 )
     else:
         # pylint: disable-next=consider-using-f-string
@@ -629,7 +639,8 @@ def ast_stream() -> None:
                 benchmark(
                     req_begin,
                     now_utc().timestamp(),
-                    last.get('usage').get('completion_tokens')
+                    last.get('usage').get('completion_tokens'),
+                    last.get('usage').get('prompt_tokens')
                 )
     else:
         # pylint: disable-next=consider-using-f-string
@@ -645,33 +656,41 @@ def delta_process(delta_lt:str) -> None:
         conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
-        if not conf['ast'] and delta.lstrip('\n') != delta:
-            delta = delta.lstrip('\n')
+        if not conf.get('ast'):
+            if delta.lstrip('\n') != delta:
+                delta = delta.lstrip('\n')
+            if not conf.get('gocon') and \
+               not delta_lt.get('reasoning_content') and delta:
+                print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+                conf['gocon'] = True
         conf['ast'] += delta
-        if not conf.get('gocon') and \
-           not delta_lt.get('reasoning_content') and delta_lt.get('content'):
-            print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
-            conf['gocon'] = True
+        if delta in {'<think>','</think>'}:
+            if delta == '</think>':
+                conf['gocon'] = False
+            conf['ast'] = ''
+            delta = ''
     else:
         if delta := delta_lt.get('reasoning_content'):
             if conf.get('gocon') and delta.lstrip('\n') != delta:
                 delta = delta.lstrip('\n')
             conf['gocon'] = False
         elif delta := delta_lt.get('tool_calls'):
-            delta = delta[0]
-            index = delta.get('index')
-            if index != conf.get('tool_index'):
-                conf['tool_index'] += 1
-                conf['tool_lt'].append(conf.get('tool'))
-            if delta.get('id'):
-                conf['tool']['tool_call_id'] = delta.get('id')
-                conf['tool']['name'] = delta.get('function').get('name')
-            else:
-                conf['tool']['content'] = delta.get('function').get('arguments')
+            tool_process(delta[0])
             delta = ''
         else:
             delta = ''
     print(delta,end='',flush=True)
+
+def tool_process(delta_tool:dict) -> None:
+    index = delta_tool.get('index')
+    if index != conf.get('tool_index'):
+        conf['tool_index'] += 1
+        conf['tool_lt'].append(conf.get('tool'))
+    if delta_tool.get('id'):
+        conf['tool']['tool_call_id'] = delta_tool.get('id')
+        conf['tool']['name'] = delta_tool.get('function').get('name')
+    else:
+        conf['tool']['content'] = delta_tool.get('function').get('arguments')
 
 def tool_append(tool_lt:list) -> None:
     tool_ast_lt = []
@@ -694,32 +713,34 @@ def tool_append(tool_lt:list) -> None:
     for i in tool_lt:
         conf['msg'].append(i)
 
-def benchmark(req_begin:float,end:float,tokens:int) -> None:
+def benchmark(req_begin:float,end:float,c_tokens:int,p_tokens:int) -> None:
     print(f'BENCHMARK #{conf.get("rnd")}')
     if first := conf.get('first_token',None):
         data = {
             'request_begin': f'{req_begin:.6f}',
             'first_token': f'{first:.6f}',
             'request_end': f'{end:.6f}',
-            'request_duration': f'{end - req_begin:.6f}',
-            'request_queue': f'{first - req_begin:.6f}',
-            'completion_duration': f'{end - first:.6f}',
-            'completion_tokens': tokens,
+            'latency': f'{end - req_begin:.6f}',
+            'time_to_first_token': f'{first - req_begin:.6f}',
+            'generation_time': f'{end - first:.6f}',
+            'prompt_tokens': p_tokens,
+            'completion_tokens': c_tokens,
             'tokens_per_second':
-                f'{tokens / (end - first):.6f}',
-            'milliseconds_per_token':
-                f'{(end - first) / tokens * 1000:.6f}'
+                f'{c_tokens / (end - first):.6f}',
+            'time_per_output_token':
+                f'{(end - first) / (c_tokens - 1) * 1000:.6f}'
         }
     else:
         data = {
             'request_begin': f'{req_begin:.6f}',
             'request_end': f'{end:.6f}',
-            'request_duration': f'{end - req_begin:.6f}',
-            'completion_tokens': tokens,
+            'latency': f'{end - req_begin:.6f}',
+            'prompt_tokens': p_tokens,
+            'completion_tokens': c_tokens,
             'tokens_per_second':
-                f'{tokens / (end - req_begin):.6f}',
-            'milliseconds_per_token':
-                f'{(end - req_begin) / tokens * 1000:.6f}'
+                f'{c_tokens / (end - req_begin):.6f}',
+            'time_per_output_token':
+                f'{(end - req_begin) / c_tokens * 1000:.6f}'
         }
     if not conf.get('benchmark').get('long'):
         __ = [data.pop(i,None) for i in ('request_begin','request_end','first_token')]

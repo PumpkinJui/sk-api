@@ -12,7 +12,6 @@ checklt_ori = {
         "show_temp": (True, False),
         "show_system": (True, False),
         "hidden_models": ([], False),
-        "free_only": (False, False),
         "benchmark": ({
             "enable": (False, False),
             "long": (False, False)
@@ -25,7 +24,8 @@ checklt_ori = {
         }, False),
         "GLM": ({
             "KEY": ("", True),
-            "model": ("prompt", False)
+            "model": ("prompt", False),
+            "free_only": (False, False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),
@@ -34,16 +34,27 @@ checklt_ori = {
         "QWEN": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "version": ("latest", False)
+            "version": ("latest", False),
+            "free_only": (False, False)
         }, False),
         "SIF": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "pro": (False, False)
+            "pro": (False, False),
+            "free_only": (False, False)
         }, False),
         "LEC": ({
             "KEY": ("", True),
+            "model": ("prompt", False)
+        }, False),
+        "FQWQ": ({
+            "KEY": ("", True),
             "model": ("prompt", False),
+            "free_only": (False, False)
+        }, False),
+        "ARK": ({
+            "KEY": ("", True),
+            "model": ("prompt", False)
         }, False)
     }, True)
 }
@@ -101,11 +112,18 @@ def key_check(key_conf:dict) -> dict: # specific
     if ser := key_conf.get('service'):
         for m,n in ser.items():
             # print(m,n)
+            if not n.get('KEY').isascii():
+                print(f'The KEY for {m} should contain ASCII characters only.')
+                return {}
             if m == 'LEC':
                 return key_conf
             if m == 'GLM':
                 if '.' not in n.get('KEY'):
                     print('The KEY for GLM should be splitted with "." but there is none.')
+                    return {}
+            elif m == 'ARK':
+                if len(n.get('KEY').split('-')) != 5:
+                    print('The KEY for ARK should be split into 5 parts by "-".')
                     return {}
             else:
                 if n.get('KEY')[:3] != 'sk-':
@@ -331,8 +349,8 @@ def service_infoget(service:str) -> dict:
         },
         'SIF': {
             'full_name': 'SiliconFlow',
-            'cht_url': 'https://api.siliconflow.com/v1/chat/completions',
-            'chk_url': 'https://api.siliconflow.com/v1/user/info',
+            'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
+            'chk_url': 'https://api.siliconflow.cn/v1/user/info',
             'max_tokens': 4096,
             'temp_range': {
                 'max_temp': 2,
@@ -398,6 +416,46 @@ def service_infoget(service:str) -> dict:
                 },
                 'ministral-3b-latest': {},
                 'ministral-8b-latest': {}
+            }
+        },
+        'FQWQ': {
+            'full_name': 'FreeQwQ',
+            'cht_url': 'https://api.suanli.cn/v1/chat/completions',
+            'reasoner': True,
+            'models': {
+                'deepseek-r1': {},
+                'deepseek-r1:7b': {
+                    'free': True
+                },
+                'deepseek-v3': {},
+                'QwQ-32B': {
+                    'free': True
+                },
+                'free:QwQ-32B': {
+                    'free': True
+                },
+                'pro:QwQ-32B': {}
+            }
+        },
+        'ARK': {
+            'full_name': 'VolcanoArk',
+            'cht_url': 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+            'temp_range': {
+                'max_temp': 1,
+                'default_temp': 0.80
+            },
+            'max_tokens': 12288,
+            'models': {
+                'doubao-1.5-pro-32k-250115': {},
+                'doubao-1.5-pro-256k-250115': {},
+                'doubao-1.5-lite-32k-250115': {},
+                'deepseek-r1-250120': {
+                    'reasoner': True,
+                    'max_tokens': 16384
+                },
+                'deepseek-v3-250324': {
+                    'max_tokens': 16384
+                }
             }
         }
     }
