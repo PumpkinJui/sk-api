@@ -140,6 +140,8 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
         lt = tuple(lst.keys())
     if sts != 'prompt' and sts not in lt:
         print(f'WRN: "{sts}" is not a valid {keyword}.')
+        print('WRN: Use it at your own risk.')
+        return {keyword: sts}
     if sts != 'prompt' and sts in lt:
         print(f'INF: {keyword.capitalize()} {sts} selected.')
         lst[sts][keyword] = sts
