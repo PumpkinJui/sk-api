@@ -455,6 +455,18 @@ def service_infoget(service:str) -> dict:
                 },
                 'deepseek-v3-250324': {
                     'max_tokens': 16384
+                },
+                'moonshot-v1-8k': {
+                    'max_tokens': 4096
+                },
+                'moonshot-v1-32k': {
+                    'max_tokens': 4096
+                },
+                'moonshot-v1-128k': {
+                    'max_tokens': 4096
+                },
+                'mistral-7b-instruct-v0.2': {
+                    'max_tokens': 4096
                 }
             }
         }
