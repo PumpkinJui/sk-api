@@ -25,7 +25,8 @@ checklt_ori = {
         "GLM": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "free_only": (False, False)
+            "free_only": (False, False),
+            "search_engine": ("search_std", False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),
@@ -510,16 +511,14 @@ def glm_tools_gen() -> list:
     Args: None.
     Returns:
         list: the GLM tools.
-        Dead return.
     """
     search_prompt = '\n'.join([
-        '','',
         '## 来自互联网的信息','',
         '{search_result}','',
         '## 要求','',
         '根据最新发布的信息回答用户问题。','',
         '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
-        ''
+        '## 当前日期',''
     ])
     tools = [{
         "type": "web_search",

@@ -126,6 +126,11 @@ def conf_read() -> dict:
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
     __ = [conf_r.pop(i,None) for i in ('models','temp_range')]
+    if conf_r.get('search_engine',''):
+        if conf_r.get('tool_use'):
+            conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
+            conf_r['tools'][0]['web_search']['search_prompt'] += \
+                str(now_utc().strftime("%Y-%m-%d UTC"))
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
     for i in nested:
@@ -559,13 +564,13 @@ def ast_nostream() -> None:
         choices = json.loads(rsp.text)['choices'][0]
         # print(choices)
         if choices.get('message').get('reasoning_content'):
-            print(choices.get('message').get('reasoning_content').strip('\n'))
+            print(choices.get('message').get('reasoning_content').strip())
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-        elif (ast := choices.get('message')).get('content').strip('\n').startswith('<think>') \
+        elif (ast := choices.get('message')).get('content').strip().startswith('<think>') \
          and conf.get('reasoner'):
             ast['content'] = tag_style_reasoning_nostream(ast.get('content'))
-        print(ast.get('content').strip('\n'),end='')
+        print(ast.get('content').strip(),end='')
         conf['msg'].append(ast)
         if choices.get('finish_reason') == 'tool_calls':
             for tool_call in ast.get('tool_calls'):
@@ -596,7 +601,7 @@ def ast_nostream() -> None:
 def tag_style_reasoning_nostream(con:str) -> str:
     con = con.replace('<think>','',1)
     conl = con.split('</think>',1)
-    print(conl[0].strip('\n'))
+    print(conl[0].strip())
     print()
     print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
     return conl[1]
@@ -669,8 +674,7 @@ def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf.get('ast'):
-            if delta.lstrip('\n') != delta:
-                delta = delta.lstrip('\n')
+            delta = delta.lstrip()
             if not conf.get('gocon') and \
                not delta_lt.get('reasoning_content') and delta:
                 print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
@@ -679,8 +683,8 @@ def delta_process(delta_lt:str) -> None:
         if conf.get('reasoner'):
             delta = tag_style_reasoning_stream(delta)
     elif delta := delta_lt.get('reasoning_content'):
-        if conf.get('gocon') and delta.lstrip('\n') != delta:
-            delta = delta.lstrip('\n')
+        if conf.get('gocon') and delta.lstrip() != delta:
+            delta = delta.lstrip()
         conf['gocon'] = False
     elif delta := delta_lt.get('tool_calls'):
         tool_process(delta[0])
@@ -713,8 +717,7 @@ def tag_style_reasoning_stream(delta:str) -> str:
           Used to cut tags out if possible,
           and to split the tag `</think>` and the content.
     Returns:
-        - str: delta
-          Same as above.
+        str: New delta.
     '''
     if delta == '<think>':
         conf['ast'] = ''
@@ -727,8 +730,8 @@ def tag_style_reasoning_stream(delta:str) -> str:
         dl = delta.split('\n',1)
         print(dl[0],end='',flush=True)
         print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
-        conf['ast'] = dl[1].lstrip('\n')
-        return dl[1].lstrip('\n')
+        conf['ast'] = dl[1].lstrip()
+        return dl[1].lstrip()
     return delta
 
 def tool_process(delta_tool:dict) -> None:
