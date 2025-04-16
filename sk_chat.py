@@ -50,9 +50,10 @@ The function system structure: (arguments omitted)
 - Chat executive
   chat()
   - ast_nostream()
+    - tag_style_reasoning_nostream()
   - ast_stream()
     - delta_process()
-      - tag_style_reasoning()
+      - tag_style_reasoning_stream()
       - tool_process()
     - tool_append()
   - benchmark()
@@ -561,7 +562,9 @@ def ast_nostream() -> None:
             print(choices.get('message').get('reasoning_content').strip('\n'))
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-        ast = choices.get('message')
+        elif (ast := choices.get('message')).get('content').strip('\n').startswith('<think>') \
+         and conf.get('reasoner'):
+            ast['content'] = tag_style_reasoning_nostream(ast.get('content'))
         print(ast.get('content').strip('\n'),end='')
         conf['msg'].append(ast)
         if choices.get('finish_reason') == 'tool_calls':
@@ -589,6 +592,14 @@ def ast_nostream() -> None:
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
         ))
+
+def tag_style_reasoning_nostream(con:str) -> str:
+    con = con.replace('<think>','',1)
+    conl = con.split('</think>',1)
+    print(conl[0].strip('\n'))
+    print()
+    print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
+    return conl[1]
 
 def ast_stream() -> None:
     conf['ast'] = ''
@@ -666,7 +677,7 @@ def delta_process(delta_lt:str) -> None:
                 conf['gocon'] = True
         conf['ast'] += delta
         if conf.get('reasoner'):
-            delta = tag_style_reasoning(delta)
+            delta = tag_style_reasoning_stream(delta)
     elif delta := delta_lt.get('reasoning_content'):
         if conf.get('gocon') and delta.lstrip('\n') != delta:
             delta = delta.lstrip('\n')
@@ -678,7 +689,7 @@ def delta_process(delta_lt:str) -> None:
         delta = ''
     print(delta,end='',flush=True)
 
-def tag_style_reasoning(delta:str) -> str:
+def tag_style_reasoning_stream(delta:str) -> str:
     '''Split reasoning content for tag-style ones.
 
     Some services (i.e. GLM and FQWQ) don't respect DeepSeek's standard.
@@ -716,8 +727,8 @@ def tag_style_reasoning(delta:str) -> str:
         dl = delta.split('\n',1)
         print(dl[0],end='',flush=True)
         print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
-        conf['ast'] = dl[1]
-        return dl[1]
+        conf['ast'] = dl[1].lstrip('\n')
+        return dl[1].lstrip('\n')
     return delta
 
 def tool_process(delta_tool:dict) -> None:
