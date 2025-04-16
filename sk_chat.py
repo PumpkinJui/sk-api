@@ -52,6 +52,7 @@ The function system structure: (arguments omitted)
   - ast_nostream()
   - ast_stream()
     - delta_process()
+      - tag_style_reasoning()
       - tool_process()
     - tool_append()
   - benchmark()
@@ -664,22 +665,60 @@ def delta_process(delta_lt:str) -> None:
                 print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
                 conf['gocon'] = True
         conf['ast'] += delta
-        if delta in {'<think>','</think>'}:
-            if delta == '</think>':
-                conf['gocon'] = False
-            conf['ast'] = ''
-            delta = ''
+        if conf.get('reasoner'):
+            delta = tag_style_reasoning(delta)
+    elif delta := delta_lt.get('reasoning_content'):
+        if conf.get('gocon') and delta.lstrip('\n') != delta:
+            delta = delta.lstrip('\n')
+        conf['gocon'] = False
+    elif delta := delta_lt.get('tool_calls'):
+        tool_process(delta[0])
+        delta = ''
     else:
-        if delta := delta_lt.get('reasoning_content'):
-            if conf.get('gocon') and delta.lstrip('\n') != delta:
-                delta = delta.lstrip('\n')
-            conf['gocon'] = False
-        elif delta := delta_lt.get('tool_calls'):
-            tool_process(delta[0])
-            delta = ''
-        else:
-            delta = ''
+        delta = ''
     print(delta,end='',flush=True)
+
+def tag_style_reasoning(delta:str) -> str:
+    '''Split reasoning content for tag-style ones.
+
+    Some services (i.e. GLM and FQWQ) don't respect DeepSeek's standard.
+    Instead, they use `<think>` and `</think>` to wrap their reasoning content.
+    For compatibility, it is essential to identify them correctly.
+
+    Firstly, if `<think>` and `</think>` are treated as individual tokens,
+    cutting them out is possible.
+    So cut them out and reset `conf['ast']` to cut `\n` out properly.
+    The title is printed after the place where `</think>` was.
+
+    Secondly, if they are not, the tags are preserved.
+    `delta` is split into the tag part and the content part,
+    and the title is printed between.
+
+    If the reasoning is not tag-style, return `delta`.
+
+    Args:
+        - delta: str
+          The current delta.
+          Used to cut tags out if possible,
+          and to split the tag `</think>` and the content.
+    Returns:
+        - str: delta
+          Same as above.
+    '''
+    if delta == '<think>':
+        conf['ast'] = ''
+        return ''
+    if delta == '</think>':
+        print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+        conf['ast'] = ''
+        return ''
+    if conf.get('ast').find('</think>') != -1:
+        dl = delta.split('\n',1)
+        print(dl[0],end='',flush=True)
+        print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+        conf['ast'] = dl[1]
+        return dl[1]
+    return delta
 
 def tool_process(delta_tool:dict) -> None:
     index = delta_tool.get('index')

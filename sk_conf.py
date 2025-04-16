@@ -226,13 +226,13 @@ def service_infoget(service:str) -> dict:
                 'glm-4-plus': {
                     'tools': glm_tools
                 },
-                'glm-4-air-0111': {
+                'glm-4-air-250414': {
                     'tools': glm_tools
                 },
                 'glm-4-airx': {
                     'tools': glm_tools
                 },
-                'glm-4-flash': {
+                'glm-4-flash-250414': {
                     'tools': glm_tools,
                     'free': True
                 },
@@ -242,8 +242,18 @@ def service_infoget(service:str) -> dict:
                 'glm-4-long': {
                     'tools': glm_tools
                 },
-                'glm-zero-preview': {
-                    'max_tokens': 15360
+                'glm-z1-air': {
+                    'max_tokens': 30000,
+                    'reasoner': True
+                },
+                'glm-z1-airx': {
+                    'max_tokens': 30000,
+                    'reasoner': True
+                },
+                'glm-z1-flash': {
+                    'max_tokens': 30000,
+                    'reasoner': True,
+                    'free': True
                 },
                 'codegeex-4': {
                     'max_tokens': 32768
@@ -380,6 +390,23 @@ def service_infoget(service:str) -> dict:
                 },
                 'Qwen/QwQ-32B-Preview': {
                     'max_tokens': 8192
+                },
+                'THUDM/GLM-4-32B-0414': {
+                    'max_tokens': 8192
+                },
+                'THUDM/GLM-4-9B-0414': {
+                    'max_tokens': 8192,
+                    'free': True
+                },
+                'THUDM/GLM-Z1-32B-0414': {
+                    'reasoner': True
+                },
+                'THUDM/GLM-Z1-9B-0414': {
+                    'reasoner': True,
+                    'free': True
+                },
+                'THUDM/GLM-Z1-Rumination-32B-0414': {
+                    'reasoner': True
                 },
                 'THUDM/glm-4-9b-chat': {
                     'free': True
