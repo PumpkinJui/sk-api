@@ -477,6 +477,10 @@ def service_infoget(service:str) -> dict:
                 'doubao-1.5-pro-32k-250115': {},
                 'doubao-1.5-pro-256k-250115': {},
                 'doubao-1.5-lite-32k-250115': {},
+                'doubao-1-5-thinking-pro-250415': {
+                    'reasoner': True,
+                    'max_tokens': 16384
+                },
                 'deepseek-r1-250120': {
                     'reasoner': True,
                     'max_tokens': 16384
