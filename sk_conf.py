@@ -4,7 +4,6 @@ from types import MappingProxyType as mpt
 
 checklt_ori = {
     "stream": (True, False),
-    "tool_use": (True, False),
     "autotime": (True, False),
     "prompt_control": ({
         "balance_chk": (True, False),
@@ -26,17 +25,21 @@ checklt_ori = {
             "KEY": ("", True),
             "model": ("prompt", False),
             "free_only": (False, False),
-            "search_engine": ("search_std", False)
+            "search": (True, False),
+            "search_engine": ("search_std", False),
+            "search_result": (False, False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),
-            "model": ("prompt", False)
+            "model": ("prompt", False),
+            "search": (True, False)
         }, False),
         "QWEN": ({
             "KEY": ("", True),
             "model": ("prompt", False),
             "version": ("latest", False),
-            "free_only": (False, False)
+            "free_only": (False, False),
+            "search": (True, False),
         }, False),
         "SIF": ({
             "KEY": ("", True),
@@ -90,7 +93,8 @@ def conf_check(user_conf:dict,ref:dict) -> dict:
 def conf_merge(external_conf:dict,internal_conf:dict=conf_default(),ref:dict=checklt) -> dict:
     dele = []
     for m,n in external_conf.items():
-        if isinstance(n,dict) and not conf_merge(n,conf_default(ref.get(m)[0]),ref.get(m)[0]):
+        if isinstance(n,dict) and \
+           not (n := conf_merge(n,conf_default(ref.get(m)[0]),ref.get(m)[0])):
             if not ref.get(m)[1]:
                 dele.append(m)
                 continue
