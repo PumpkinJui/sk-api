@@ -4,7 +4,6 @@ from types import MappingProxyType as mpt
 
 checklt_ori = {
     "stream": (True, False),
-    "tool_use": (True, False),
     "autotime": (True, False),
     "prompt_control": ({
         "balance_chk": (True, False),
@@ -25,17 +24,22 @@ checklt_ori = {
         "GLM": ({
             "KEY": ("", True),
             "model": ("prompt", False),
-            "free_only": (False, False)
+            "free_only": (False, False),
+            "search": (True, False),
+            "search_engine": ("search_std", False),
+            "search_result": (False, False)
         }, False),
         "KIMI": ({
             "KEY": ("", True),
-            "model": ("prompt", False)
+            "model": ("prompt", False),
+            "search": (True, False)
         }, False),
         "QWEN": ({
             "KEY": ("", True),
             "model": ("prompt", False),
             "version": ("latest", False),
-            "free_only": (False, False)
+            "free_only": (False, False),
+            "search": (True, False),
         }, False),
         "SIF": ({
             "KEY": ("", True),
@@ -89,7 +93,8 @@ def conf_check(user_conf:dict,ref:dict) -> dict:
 def conf_merge(external_conf:dict,internal_conf:dict=conf_default(),ref:dict=checklt) -> dict:
     dele = []
     for m,n in external_conf.items():
-        if isinstance(n,dict) and not conf_merge(n,conf_default(ref.get(m)[0]),ref.get(m)[0]):
+        if isinstance(n,dict) and \
+           not (n := conf_merge(n,conf_default(ref.get(m)[0]),ref.get(m)[0])):
             if not ref.get(m)[1]:
                 dele.append(m)
                 continue
@@ -226,13 +231,13 @@ def service_infoget(service:str) -> dict:
                 'glm-4-plus': {
                     'tools': glm_tools
                 },
-                'glm-4-air-0111': {
+                'glm-4-air-250414': {
                     'tools': glm_tools
                 },
                 'glm-4-airx': {
                     'tools': glm_tools
                 },
-                'glm-4-flash': {
+                'glm-4-flash-250414': {
                     'tools': glm_tools,
                     'free': True
                 },
@@ -242,8 +247,18 @@ def service_infoget(service:str) -> dict:
                 'glm-4-long': {
                     'tools': glm_tools
                 },
-                'glm-zero-preview': {
-                    'max_tokens': 15360
+                'glm-z1-air': {
+                    'max_tokens': 30000,
+                    'reasoner': True
+                },
+                'glm-z1-airx': {
+                    'max_tokens': 30000,
+                    'reasoner': True
+                },
+                'glm-z1-flash': {
+                    'max_tokens': 30000,
+                    'reasoner': True,
+                    'free': True
                 },
                 'codegeex-4': {
                     'max_tokens': 32768
@@ -381,6 +396,23 @@ def service_infoget(service:str) -> dict:
                 'Qwen/QwQ-32B-Preview': {
                     'max_tokens': 8192
                 },
+                'THUDM/GLM-4-32B-0414': {
+                    'max_tokens': 8192
+                },
+                'THUDM/GLM-4-9B-0414': {
+                    'max_tokens': 8192,
+                    'free': True
+                },
+                'THUDM/GLM-Z1-32B-0414': {
+                    'reasoner': True
+                },
+                'THUDM/GLM-Z1-9B-0414': {
+                    'reasoner': True,
+                    'free': True
+                },
+                'THUDM/GLM-Z1-Rumination-32B-0414': {
+                    'reasoner': True
+                },
                 'THUDM/glm-4-9b-chat': {
                     'free': True
                 },
@@ -449,6 +481,10 @@ def service_infoget(service:str) -> dict:
                 'doubao-1.5-pro-32k-250115': {},
                 'doubao-1.5-pro-256k-250115': {},
                 'doubao-1.5-lite-32k-250115': {},
+                'doubao-1-5-thinking-pro-250415': {
+                    'reasoner': True,
+                    'max_tokens': 16384
+                },
                 'deepseek-r1-250120': {
                     'reasoner': True,
                     'max_tokens': 16384
@@ -483,16 +519,14 @@ def glm_tools_gen() -> list:
     Args: None.
     Returns:
         list: the GLM tools.
-        Dead return.
     """
     search_prompt = '\n'.join([
-        '','',
         '## 来自互联网的信息','',
         '{search_result}','',
         '## 要求','',
         '根据最新发布的信息回答用户问题。','',
         '必须在回答末尾提示：「此回答使用网络搜索辅助生成。」','',
-        ''
+        '## 当前日期',''
     ])
     tools = [{
         "type": "web_search",

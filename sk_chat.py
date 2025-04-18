@@ -50,10 +50,13 @@ The function system structure: (arguments omitted)
 - Chat executive
   chat()
   - ast_nostream()
+    - tag_style_reasoning_nostream()
   - ast_stream()
     - delta_process()
+      - tag_style_reasoning_stream()
       - tool_process()
     - tool_append()
+  - glm_search()
   - benchmark()
 
 The actual writing and running order may vary.
@@ -123,7 +126,12 @@ def conf_read() -> dict:
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
-    __ = [conf_r.pop(i,None) for i in ('models','temp_range')]
+    if conf_r.get('tools') and conf_r.get('search') and conf_r.get('full_name') == 'ChatGLM':
+        conf_r['tools'][0]['web_search']['search_prompt'] += \
+            str(now_utc().strftime("%Y-%m-%d UTC"))
+        conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
+        conf_r['tools'][0]['web_search']['search_result'] = conf_r.pop('search_result')
+    __ = [conf_r.pop(i,None) for i in ('models','temp_range','search_engine','search_result')]
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
     for i in nested:
@@ -386,11 +394,11 @@ def payload_gen() -> str:
         payload['stream_options'] = {
             'include_usage': True
         }
-    if conf.get('tool_use') and conf.get('tools'):
+    if conf.get('search') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
     elif conf.get('model') == 'emohaa':
         payload['meta'] = conf.get('meta')
-    elif conf.get('tool_use') and conf.get('model') in {
+    elif conf.get('search') and conf.get('model') in {
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
         'qwen-turbo','qwen-turbo-latest'
@@ -553,16 +561,22 @@ def ast_nostream() -> None:
         data = payload_gen(),
         timeout = (3.05,None)
     )
+    req_end = now_utc().timestamp()
     if rsp.status_code == requests.codes.ok: # pylint: disable=no-member
-        choices = json.loads(rsp.text)['choices'][0]
+        text = json.loads(rsp.text)
+        choices = text['choices'][0]
         # print(choices)
         if choices.get('message').get('reasoning_content'):
-            print(choices.get('message').get('reasoning_content').strip('\n'))
+            print(choices.get('message').get('reasoning_content').strip())
             print()
             print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
-        ast = choices.get('message')
-        print(ast.get('content').strip('\n'),end='')
+        elif (ast := choices.get('message')).get('content').strip().startswith('<think>') \
+         and conf.get('reasoner'):
+            ast['content'] = tag_style_reasoning_nostream(ast.get('content'))
+        print(ast.get('content').strip(),end='')
         conf['msg'].append(ast)
+        if text.get('web_search'):
+            glm_search(text.get('web_search'))
         if choices.get('finish_reason') == 'tool_calls':
             for tool_call in ast.get('tool_calls'):
                 conf['msg'].append({
@@ -578,7 +592,7 @@ def ast_nostream() -> None:
             if conf.get('benchmark').get('enable'):
                 benchmark(
                     req_begin,
-                    now_utc().timestamp(),
+                    req_end,
                     json.loads(rsp.text).get('usage').get('completion_tokens'),
                     json.loads(rsp.text).get('usage').get('prompt_tokens')
                 )
@@ -588,6 +602,14 @@ def ast_nostream() -> None:
             rsp.status_code,
             json.loads(rsp.text)['error']['message']
         ))
+
+def tag_style_reasoning_nostream(con:str) -> str:
+    con = con.replace('<think>','',1)
+    conl = con.split('</think>',1)
+    print(conl[0].strip())
+    print()
+    print(f'ASSISTANT CONTENT #{conf.get("rnd")}')
+    return conl[1]
 
 def ast_stream() -> None:
     conf['ast'] = ''
@@ -626,6 +648,8 @@ def ast_stream() -> None:
                    not (delta_lt := choices[0].get('delta')):
                     continue
                 delta_process(delta_lt)
+                if data.get('web_search'):
+                    glm_search(data.get('web_search'))
         if len(conf.get('tool')) != 1:
             conf['tool_lt'].append(conf.get('tool'))
             tool_append(conf.get('tool_lt'))
@@ -657,29 +681,63 @@ def delta_process(delta_lt:str) -> None:
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
         if not conf.get('ast'):
-            if delta.lstrip('\n') != delta:
-                delta = delta.lstrip('\n')
+            delta = delta.lstrip()
             if not conf.get('gocon') and \
                not delta_lt.get('reasoning_content') and delta:
                 print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
                 conf['gocon'] = True
         conf['ast'] += delta
-        if delta in {'<think>','</think>'}:
-            if delta == '</think>':
-                conf['gocon'] = False
-            conf['ast'] = ''
-            delta = ''
+        if conf.get('reasoner'):
+            delta = tag_style_reasoning_stream(delta)
+    elif delta := delta_lt.get('reasoning_content'):
+        if conf.get('gocon') and delta.lstrip() != delta:
+            delta = delta.lstrip()
+        conf['gocon'] = False
+    elif delta := delta_lt.get('tool_calls'):
+        tool_process(delta[0])
+        delta = ''
     else:
-        if delta := delta_lt.get('reasoning_content'):
-            if conf.get('gocon') and delta.lstrip('\n') != delta:
-                delta = delta.lstrip('\n')
-            conf['gocon'] = False
-        elif delta := delta_lt.get('tool_calls'):
-            tool_process(delta[0])
-            delta = ''
-        else:
-            delta = ''
+        delta = ''
     print(delta,end='',flush=True)
+
+def tag_style_reasoning_stream(delta:str) -> str:
+    """Split reasoning content for tag-style ones.
+
+    Some services (i.e. GLM and FQWQ) don't respect DeepSeek's standard.
+    Instead, they use `<think>` and `</think>` to wrap their reasoning content.
+    For compatibility, it is essential to identify them correctly.
+
+    Firstly, if `<think>` and `</think>` are treated as individual tokens,
+    cutting them out is possible.
+    So cut them out and reset `conf['ast']` to cut `\n` out properly.
+    The title is printed after the place where `</think>` was.
+    Secondly, if they are not, the tags are preserved.
+    `delta` is split into the tag part and the content part,
+    and the title is printed between.
+    Finally, if the reasoning is not tag-style, return `delta`.
+
+    Args:
+        - delta: str
+          The current delta.
+          Used to cut tags out if possible,
+          and to split the tag `</think>` and the content.
+    Returns:
+        str: New delta.
+    """
+    if delta == '<think>':
+        conf['ast'] = ''
+        return ''
+    if delta == '</think>':
+        print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+        conf['ast'] = ''
+        return ''
+    if conf.get('ast').find('</think>') != -1:
+        dl = delta.split('\n',1)
+        print(dl[0],end='',flush=True)
+        print(f'\n\nASSISTANT CONTENT #{conf.get("rnd")}',flush=True)
+        conf['ast'] = dl[1].lstrip()
+        return dl[1].lstrip()
+    return delta
 
 def tool_process(delta_tool:dict) -> None:
     index = delta_tool.get('index')
@@ -712,6 +770,21 @@ def tool_append(tool_lt:list) -> None:
     })
     for i in tool_lt:
         conf['msg'].append(i)
+
+def glm_search(refl:list) -> None:
+    """GLM WebSearch handler.
+
+    Print references in the MarkDown format `- [title](link)`.
+
+    Args:
+        - refl: list
+          The WebSearch results.
+    Returns: None.
+    """
+    print('\n')
+    print(f'WEB SEARCH REFERENCES #{conf.get("rnd")}')
+    for i in refl:
+        print(f"- {i.get('refer')}: [{i.get('title')}]({i.get('link')})")
 
 def benchmark(req_begin:float,end:float,c_tokens:int,p_tokens:int) -> None:
     print(f'BENCHMARK #{conf.get("rnd")}')
