@@ -12,7 +12,7 @@
 
 通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
-嫌 CLI 界面太丑，MarkDown 不渲染？试试 [CherryStudio](https://cherry-ai.com/)！  
+嫌 CLI 界面太丑，MarkDown & LaTeX 公式不渲染？试试 [CherryStudio](https://cherry-ai.com/)！  
 个人推荐，非广告；CherryStudio 与本人无利益关联。  
 另附文章：[新学期，给自己配一个好用的 AI 助手吧。会思考，能联网，有知识库那种 - 少数派](https://sspai.com/post/96868)
 
@@ -85,27 +85,7 @@ pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 
 ### 做这个程序有什么意义？
 
-如[此文](rationale.md)。
-
-### 它能干什么
-
-<details>
-
-用专业一点的说法，就是上面那句：「通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。」
-
-用更容易理解的说法，就是这样的：(以下内容由本程序辅助生成)
-
-> 简单来说，这个程序就像是一个桥梁，让你可以轻松地与一个聪明的 AI 助手对话，而不需要了解复杂的技术细节。
->
-> API (应用程序编程接口) 就像是一个「服务员」或「中间人」，它帮助不同的软件或应用程序之间进行沟通和协作。想象一下，你去一家会员制餐厅吃饭。你不需要知道厨房里是如何做菜的，你只需要出示会员卡，告诉服务员你想要什么，服务员会把你的需求传达给厨房，然后把做好的菜端给你。
->
-> API 就像这个服务员，它让不同的软件系统之间能够互相「点菜」和「上菜」，而不需要知道对方内部的具体实现细节。
->
-> 而 API 密钥则像是那张会员卡，可以用来证明你的身份，如果没有它你就点不了菜，用不了更优惠的价格。
->
-> 为了进行对话，你可以在命令行界面 (CLI) 运行已经打包好的程序，或者通过 Python 直接运行本程序的源码。
-
-</details>
+如[文章迁移中]。
 
 ### 和网页版的区别
 
@@ -192,8 +172,6 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 
 - `stream`：`bool`。设定为 `true` 时，进行流式输出，`false` 反之。  
   选填项，默认为 `true`。
-- `tool_use`：`bool`。设定为 `true` 时，使用 tools 进行调用，这可以启用网络搜索等功能；`false` 禁用。  
-  选填项，默认为 `true`。
 - `autotime`：`bool`。设定为 `true` 时，自动在系统提示词中追加当前 UTC 时间，格式为 `%Y-%m-%d %H:%M:%S`；`false` 禁用。  
   开启后，可能触发意想不到的回复。  
   选填项，默认为 `true`。
@@ -229,17 +207,31 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       选填项，默认为 `prompt`。可选项包括：
       - prompt
       - glm-4-plus
-      - glm-4-air-0111
+      - glm-4-air-250414
       - glm-4-airx
-      - glm-4-flash
+      - glm-4-flash-250414
       - glm-4-flashx
       - glm-4-long
-      - glm-zero-preview
+      - glm-z1-air
+      - glm-z1-airx
+      - glm-z1-flash
       - codegeex-4
       - charglm-4
       - emohaa
     - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
-    选填项，默认为 `false`。
+      选填项，默认为 `false`。
+    - `search`：`bool`。设定为 `true` 时，启用网络搜索 tool；`false` 禁用。  
+      选填项，默认为 `true`。
+    - `search_engine`：`str`。仅在启用 `search` 时生效，设置使用的搜索引擎。  
+      选填项，默认为 `search_std`。可选项包括：
+      - search_std
+      - search_pro
+      - search_pro_sogou
+      - search_pro_quark
+      - search_pro_jina
+    - `search_result`：`bool`。仅在启用 `search` 时生效，设置是否返回信息源。  
+      若设置为 `true`，将会以 MarkDown 无序列表的链接格式输出信息源。由于智谱方面的问题，链接可能为空。  
+      选填项，默认为 `false`。
   - `KIMI`：`dict`。配置 Kimi 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -247,6 +239,8 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - prompt
       - moonshot-v1-auto
       - kimi-latest
+    - `search`：`bool`。设定为 `true` 时，启用网络搜索 tool；`false` 禁用。  
+      选填项，默认为 `true`。
   - `QWEN`：`dict`。配置 ModelStudio 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -275,7 +269,9 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - stable
       - oss
     - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
-    选填项，默认为 `false`。
+      选填项，默认为 `false`。  
+    - `search`：`bool`。设定为 `true` 时，启用网络搜索 tool；`false` 禁用。  
+      选填项，默认为 `true`。
   - `SIF`：`dict`。配置 SiliconFlow 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -290,6 +286,11 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - Qwen/Qwen2.5-Coder-7B-Instruct
       - Qwen/QwQ-32B
       - Qwen/QwQ-32B-Preview
+      - THUDM/GLM-4-32B-0414
+      - THUDM/GLM-4-9B-0414
+      - THUDM/GLM-Z1-32B-0414
+      - THUDM/GLM-Z1-9B-0414
+      - THUDM/GLM-Z1-Rumination-32B-0414
       - THUDM/glm-4-9b-chat
       - internlm/internlm2_5-20b-chat
       - internlm/internlm2_5-7b-chat
@@ -297,7 +298,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
     - `pro`：`bool`。设为 `true` 时如能使用 Pro 版模型则自动使用，反之不使用。Pro 版与普通版有扣费渠道、最大输出、限流等一系列差异。  
       选填项，默认为 `false`。
     - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
-    选填项，默认为 `false`。
+      选填项，默认为 `false`。
   - `LEC`：`dict`。配置 LeChat 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -322,7 +323,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - free:QwQ-32B
       - pro:QwQ-32B
     - `free_only`：`bool`。设定为 `true` 时，若该服务有免费模型，则仅展示免费模型，没有时自动展示全部模型；`false` 全部展示。  
-    选填项，默认为 `false`。
+      选填项，默认为 `false`。
   - `ARK`：`dict`。配置 VolcanoArk 的信息。选填项。
     - `KEY`：`str`。API KEY。必填项。
     - `model`：`str`。选择使用的模型。  
@@ -331,6 +332,7 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
       - doubao-1.5-pro-32k-250115
       - doubao-1.5-pro-256k-250115
       - doubao-1.5-lite-32k-250115
+      - doubao-1-5-thinking-pro-250415
       - deepseek-r1-250120
       - deepseek-v3-250324
       - moonshot-v1-8k
@@ -355,7 +357,6 @@ API 提供的是一个更广阔的世界。例如，你还可以把它挂到[沉
 - [ ] 将 README 中的函数介绍内嵌
 - [ ] 截断/触发限流自动继续 (需考虑如何处理 DeepSeek 目前的繁忙状态)
 - [ ] Command-Line Switch
-- [ ] 【高难】适配 `glm-4-alltools`
 - [ ] 【高难】多模型对比
 
 ### Not-Planned
