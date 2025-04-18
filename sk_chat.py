@@ -126,7 +126,7 @@ def conf_read() -> dict:
     )
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
-    if conf_r.get('search') and conf_r.get('full_name') == 'ChatGLM':
+    if conf_r.get('tools') and conf_r.get('search') and conf_r.get('full_name') == 'ChatGLM':
         conf_r['tools'][0]['web_search']['search_prompt'] += \
             str(now_utc().strftime("%Y-%m-%d UTC"))
         conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
