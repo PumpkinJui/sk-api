@@ -83,9 +83,9 @@ pyinstaller --clean --version-info file-version-info.txt -n sk-api -F sk_chat.py
 
 ## FAQ
 
-### 做这个程序有什么意义？
+### 做这个程序的心路历程 / 意义？
 
-如[文章迁移中]。
+如[关于 sk-api 的博客文章](https://pumpkinjui.pages.dev/blog/2025/01/13/sk-api.html)。
 
 ### 和网页版的区别
 
