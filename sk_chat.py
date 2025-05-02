@@ -597,11 +597,14 @@ def ast_nostream() -> None:
                     json.loads(rsp.text).get('usage').get('prompt_tokens')
                 )
     else:
-        # pylint: disable-next=consider-using-f-string
-        exitc('ERR: {} {}'.format(
-            rsp.status_code,
-            json.loads(rsp.text)['error']['message']
-        ))
+        try:
+            # pylint: disable-next=consider-using-f-string
+            exitc('ERR: {} {}'.format(
+                rsp.status_code,
+                json.loads(rsp.text)['error']['message']
+            ))
+        except KeyError:
+            exitc(f'ERR: {json.loads(rsp.text)}')
 
 def tag_style_reasoning_nostream(con:str) -> str:
     con = con.replace('<think>','',1)
@@ -667,11 +670,14 @@ def ast_stream() -> None:
                     last.get('usage').get('prompt_tokens')
                 )
     else:
-        # pylint: disable-next=consider-using-f-string
-        exitc('ERR: {} {}'.format(
-            rsp.status_code,
-            json.loads(rsp.text)['error']['message']
-        ))
+        try:
+            # pylint: disable-next=consider-using-f-string
+            exitc('ERR: {} {}'.format(
+                rsp.status_code,
+                json.loads(rsp.text)['error']['message']
+            ))
+        except KeyError:
+            exitc(f'ERR: {json.loads(rsp.text)}')
 
 def delta_process(delta_lt:str) -> None:
     if not conf['first_token'] and \

@@ -382,15 +382,25 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True,
                     'free': True
                 },
-                'Qwen/Qwen2.5-72B-Instruct-128K': {},
-                'Qwen/Qwen2.5-7B-Instruct': {
-                    'free': True
+                'Qwen/Qwen3-235B-A22B': {
+                    'max_tokens': 8192,
+                    'reasoner': True
                 },
-                'Qwen/Qwen2.5-Coder-32B-Instruct': {},
-                'Qwen/Qwen2.5-Coder-7B-Instruct': {
+                'Qwen/Qwen3-30B-A3B': {
+                    'max_tokens': 8192,
+                    'reasoner': True
+                },
+                'Qwen/Qwen3-32B': {
+                    'max_tokens': 8192,
+                    'reasoner': True
+                },
+                'Qwen/Qwen3-8B': {
+                    'max_tokens': 8192,
+                    'reasoner': True,
                     'free': True
                 },
                 'Qwen/QwQ-32B': {
+                    'max_tokens': None,
                     'reasoner': True
                 },
                 'Qwen/QwQ-32B-Preview': {
