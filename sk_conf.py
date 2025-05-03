@@ -470,6 +470,9 @@ def service_infoget(service:str) -> dict:
                     'free': True
                 },
                 'deepseek-v3': {},
+                'free:Qwen3-30B-A3B': {
+                    'free': True
+                },
                 'QwQ-32B': {
                     'free': True
                 },
