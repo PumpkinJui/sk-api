@@ -127,10 +127,13 @@ def conf_read() -> dict:
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
     if conf_r.get('tools') and conf_r.get('search') and conf_r.get('full_name') == 'ChatGLM':
-        conf_r['tools'][0]['web_search']['search_prompt'] += \
-            str(now_utc().strftime("%Y-%m-%d UTC"))
-        conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
-        conf_r['tools'][0]['web_search']['search_result'] = conf_r.pop('search_result')
+        if conf_r.get('free_only'):
+            conf_r['search'] = False
+        else:
+            conf_r['tools'][0]['web_search']['search_prompt'] += \
+                str(now_utc().strftime("%Y-%m-%d UTC"))
+            conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
+            conf_r['tools'][0]['web_search']['search_result'] = conf_r.pop('search_result')
     __ = [conf_r.pop(i,None) for i in ('models','temp_range','search_engine','search_result')]
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
@@ -899,7 +902,7 @@ try:
     if conf.get('balance_chk') and conf.get('chk_url'):
         print(balance_chk())
         print()
-    # print(payload_gen([],0,False))
+    # print(payload_gen())
     # exitc('INF: Debug Exit.')
     chat()
 except KeyboardInterrupt:
