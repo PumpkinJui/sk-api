@@ -40,6 +40,7 @@ checklt_ori = {
             "version": ("latest", False),
             "free_only": (False, False),
             "search": (True, False),
+            "enable_thinking": (True, False)
         }, False),
         "SIF": ({
             "KEY": ("", True),

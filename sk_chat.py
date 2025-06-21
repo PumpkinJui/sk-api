@@ -257,8 +257,11 @@ def model_remap(remap_conf:dict) -> dict:
         dict: The model-remapped conf.
     """
     if remap_conf.get('full_name') == 'ModelStudio':
+        if remap_conf.get('model') in {'qwen-plus','qwen-turbo'}:
+           remap_conf['reasoner'] = remap_conf.get('enable_thinking')
+           remap_conf['qwen3'] = True
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
-        del remap_conf['version']
+        __ = [remap_conf.pop(i,None) for i in ('version','enable_thinking')]
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
        not remap_conf.get('free_only'):
@@ -303,7 +306,7 @@ def qwen_remap(model:str,ver:str) -> str:
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
         'qwen-coder-plus','qwen-coder-turbo',
-        'qwq-plus'
+        'qwq-plus','qwen-long'
     } or ver == 'stable':
         return model
     if ver not in {'stable','latest','oss'}:
@@ -315,9 +318,9 @@ def qwen_remap(model:str,ver:str) -> str:
         print(f'INF: Remap to {model}.')
         return model
     oss_map = {
-        'qwen-max': 'qwen2.5-72b-instruct',
-        'qwen-plus': 'qwen2.5-32b-instruct',
-        'qwen-turbo': 'qwen2.5-14b-instruct-1m',
+        'qwen-max': 'qwen-max-latest',
+        'qwen-plus': 'qwen3-235b-a22b',
+        'qwen-turbo': 'qwen3-30b-a3b',
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
         'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
@@ -397,16 +400,19 @@ def payload_gen() -> str:
         payload['stream_options'] = {
             'include_usage': True
         }
+    if conf.get('qwen3'):
+        payload['enable_thinking'] = conf.get('reasoner')
     if conf.get('search') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
-    elif conf.get('model') == 'emohaa':
-        payload['meta'] = conf.get('meta')
     elif conf.get('search') and conf.get('model') in {
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
-        'qwen-turbo','qwen-turbo-latest'
+        'qwen-turbo','qwen-turbo-latest',
+        'qwq-plus','qwq-plus-latest','qwq-32b'
     }:
         payload['enable_search'] = True
+    elif conf.get('model') == 'emohaa':
+        payload['meta'] = conf.get('meta')
     payload_json = json.dumps(payload)
     # print(conf.get('msg'),payload_json,sep='\n\n',end='\n\n')
     return payload_json
