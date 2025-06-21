@@ -248,7 +248,7 @@ def service_infoget(service:str) -> dict:
                     'tools': glm_tools
                 },
                 'glm-z1-air': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
                     'reasoner': True
                 },
                 'glm-z1-airx': {
@@ -256,7 +256,7 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True
                 },
                 'glm-z1-flash': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
                     'reasoner': True,
                     'free': True
                 },
@@ -382,6 +382,14 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True,
                     'free': True
                 },
+                'MiniMaxAI/MiniMax-M1-80k': {
+                    'max_tokens': 40000,
+                    'reasoner': True
+                },
+                'Tongyi-Zhiwen/QwenLong-L1-32B': {
+                    'max_tokens': 8192,
+                    'reasoner': True
+                },
                 'Qwen/Qwen3-235B-A22B': {
                     'max_tokens': 8192,
                     'reasoner': True
@@ -426,11 +434,9 @@ def service_infoget(service:str) -> dict:
                 'THUDM/glm-4-9b-chat': {
                     'free': True
                 },
-                'internlm/internlm2_5-20b-chat': {},
                 'internlm/internlm2_5-7b-chat': {
                     'free': True
-                },
-                'TeleAI/TeleChat2': {}
+                }
             }
         },
         'LEC': {
@@ -498,7 +504,7 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True,
                     'max_tokens': 16384
                 },
-                'deepseek-r1-250120': {
+                'deepseek-r1-250528': {
                     'reasoner': True,
                     'max_tokens': 16384
                 },
