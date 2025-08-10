@@ -44,7 +44,6 @@ The function system structure: (arguments omitted)
   - temp_get()
   - system_get()
   - usr_get()
-  - emohaa_meta_get()
 - Balance checker
   balance_chk()
 - Chat executive
@@ -173,7 +172,7 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
                         return lst[i]
                 for i in lt:
                     if chn in i:
-                        print(f'INF: Selection guessed: {chn}. Accepted.')
+                        print(f'INF: Selection guessed: {i}. Accepted.')
                         lst[i][keyword] = i
                         return lst[i]
             print('ERR: Selection invalid.')
@@ -257,9 +256,12 @@ def model_remap(remap_conf:dict) -> dict:
         dict: The model-remapped conf.
     """
     if remap_conf.get('full_name') == 'ModelStudio':
-        if remap_conf.get('model') in {'qwen-plus','qwen-turbo'}:
-           remap_conf['reasoner'] = remap_conf.get('enable_thinking')
-           remap_conf['qwen3'] = True
+        if remap_conf.get('model') in {
+            'qwen-plus', 'qwen-turbo', 'qwen-flash',
+            'glm-4.5', 'glm-4.5-air'
+        }:
+            remap_conf['reasoner'] = remap_conf.get('enable_thinking')
+            remap_conf['r_nr'] = True
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
         __ = [remap_conf.pop(i,None) for i in ('version','enable_thinking')]
         return remap_conf
@@ -305,7 +307,7 @@ def qwen_remap(model:str,ver:str) -> str:
     if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
-        'qwen-coder-plus','qwen-coder-turbo',
+        'qwen3-coder-plus','qwen3-coder-flash',
         'qwq-plus','qwen-long'
     } or ver == 'stable':
         return model
@@ -323,8 +325,8 @@ def qwen_remap(model:str,ver:str) -> str:
         'qwen-turbo': 'qwen3-30b-a3b',
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
-        'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
-        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct',
+        'qwen3-coder-plus': 'qwen3-coder-480b-a35b-instruct',
+        'qwen3-coder-flash': 'qwen3-coder-30b-a3b-instruct',
         'qwq-plus': 'qwq-32b'
     }
     model = oss_map.get(model)
@@ -400,7 +402,7 @@ def payload_gen() -> str:
         payload['stream_options'] = {
             'include_usage': True
         }
-    if conf.get('qwen3'):
+    if conf.get('r_nr'):
         payload['enable_thinking'] = conf.get('reasoner')
     if conf.get('search') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
@@ -408,11 +410,10 @@ def payload_gen() -> str:
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
         'qwen-turbo','qwen-turbo-latest',
-        'qwq-plus','qwq-plus-latest','qwq-32b'
+        'qwq-plus','qwq-plus-latest','qwq-32b',
+        'Moonshot-Kimi-K2-Instruct'
     }:
         payload['enable_search'] = True
-    elif conf.get('model') == 'emohaa':
-        payload['meta'] = conf.get('meta')
     payload_json = json.dumps(payload)
     # print(conf.get('msg'),payload_json,sep='\n\n',end='\n\n')
     return payload_json
@@ -526,40 +527,6 @@ def usr_get() -> dict:
     print(f'USER #{conf.get("rnd")}')
     usr = lines_get() or exitc('INF: Null input, chat ended.')
     return {'role': 'user', 'content': usr}
-
-def emohaa_meta_get() -> dict:
-    """Get META from user. Emohaa-dedicated.
-
-    1. Get `user_name` in single line mode.
-    2. Get `user_info` in multiline mode.
-    3. Generate `bot_info`.
-    4. Generate `meta`.
-
-    Args: None.
-    Returns:
-        dict: the emohaa meta.
-    Input requested.
-    """
-    user_name = input('USER NAME\n')
-    if not user_name:
-        user_name = '用户'
-    print()
-    print('USER INFO')
-    user_info = lines_get() or '用户对心理学不太了解。'
-    bot_info = '，'.join([
-        'Emohaa 学习了经典的 Hill 助人理论',
-        '拥有人类心理咨询师的专业话术能力',
-        '具有较强的倾听、情感映射、共情等情绪支持能力',
-        '帮助用户了解自身想法和感受，学习应对情绪问题',
-        '帮助用户实现乐观、积极的心理和情感状态。'
-    ])
-    meta= {
-        "user_name": user_name,
-        "user_info": user_info,
-        "bot_name": "Emohaa",
-        "bot_info": bot_info
-    }
-    return meta
 
 def ast_nostream() -> None:
     req_begin = now_utc().timestamp()
@@ -887,8 +854,6 @@ def chat() -> None:
         conf['temp'] = temp_get()
     if conf.get('show_system') and not conf.get('reasoner'):
         conf['msg'].append(system_get())
-    if conf.get('model') == 'emohaa':
-        conf['meta'] = emohaa_meta_get()
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())

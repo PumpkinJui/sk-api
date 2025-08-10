@@ -223,50 +223,99 @@ def service_infoget(service:str) -> dict:
         'GLM': {
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-            'max_tokens': 4095,
             'temp_range': {
                 'max_temp': 1,
-                'default_temp': 0.95
+                'default_temp': 0.75
             },
+            'tools': glm_tools,
             'models': {
+                'glm-4.5': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-air': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-x': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-airx': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-flash': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True,
+                    'free': True,
+                },
                 'glm-4-plus': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-air-250414': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-airx': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-flash-250414': {
-                    'tools': glm_tools,
+                    'max_tokens': 4095,
                     'free': True
                 },
-                'glm-4-flashx': {
-                    'tools': glm_tools
+                'glm-4-flashx-250414': {
+                    'max_tokens': 4095
                 },
                 'glm-4-long': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-z1-air': {
                     'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True
                 },
                 'glm-z1-airx': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True
                 },
                 'glm-z1-flash': {
                     'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True,
                     'free': True
                 },
+                'glm-z1-flashx': {
+                    'max_tokens': 32768,
+                    'tools': None,
+                    'reasoner': True
+                },
                 'codegeex-4': {
+                    'tools': None,
                     'max_tokens': 32768
                 },
-                'charglm-4': {},
-                'emohaa': {
-                    'max_tokens': 8192
+                'charglm-4': {
+                    'tools': None
                 }
             }
         },
@@ -278,13 +327,16 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 1,
                 'default_temp': 0.30
             },
+            'tools': kimi_tools,
             'models': {
-                'moonshot-v1-auto': {
-                    'tools': kimi_tools
+                'kimi-latest': {},
+                'kimi-k2-turbo-preview': {},
+                'kimi-k2-0711-preview': {},
+                'kimi-thinking-preview': {
+                    'max_tokens': 8192,
+                    'reasoner': True
                 },
-                'kimi-latest': {
-                    'tools': kimi_tools
-                }
+                'moonshot-v1-auto': {}
             }
         },
         'QWEN': {
@@ -292,13 +344,14 @@ def service_infoget(service:str) -> dict:
             'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
             'temp_range': {
                 'max_temp': 2,
-                'default_temp': 0.70,
+                'default_temp': 0.60,
                 'no_max': True
             },
             'models': {
                 'qwen-max': {},
                 'qwen-plus': {},
                 'qwen-turbo': {},
+                'qwen-flash': {},
                 'qwen-long': {
                     'temp_range': {
                         'max_temp': 2,
@@ -307,6 +360,11 @@ def service_infoget(service:str) -> dict:
                     }
                 },
                 'qwen2.5-1.5b-instruct': {
+                    'free': True
+                },
+                'qwen3-coder-plus': {},
+                'qwen3-coder-flash': {},
+                'qwen2.5-coder-3b-instruct': {
                     'free': True
                 },
                 'qwen-math-plus': {
@@ -329,11 +387,6 @@ def service_infoget(service:str) -> dict:
                         'default_temp': 0.00,
                         'no_max': True
                     },
-                    'free': True
-                },
-                'qwen-coder-plus': {},
-                'qwen-coder-turbo': {},
-                'qwen2.5-coder-3b-instruct': {
                     'free': True
                 },
                 'qwq-plus': {
@@ -360,7 +413,10 @@ def service_infoget(service:str) -> dict:
                     'max_tokens': 16384,
                     'reasoner': True,
                     'free': True
-                }
+                },
+                'Moonshot-Kimi-K2-Instruct': {},
+                'glm-4.5': {},
+                'glm-4.5-air': {}
             }
         },
         'SIF': {
