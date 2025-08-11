@@ -662,6 +662,17 @@ def delta_process(delta_lt:str) -> None:
         conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
+        if isinstance(delta,list):
+            conf['dlist'] = True
+            #print(delta)
+            try:
+                delta = delta[0]['thinking'][0]['text']
+            except IndexError:
+                delta = ''
+        elif conf.get('dlist'):
+            conf['dlist'] = False
+            conf['gocon'] = False
+            conf['ast'] = ''
         if not conf.get('ast'):
             delta = delta.lstrip()
             if not conf.get('gocon') and \

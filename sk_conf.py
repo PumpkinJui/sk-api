@@ -504,23 +504,37 @@ def service_infoget(service:str) -> dict:
                 'default_temp': 0.30
             },
             'models': {
-                'mistral-large-latest': {
-                    'temp_range': {
-                        'max_temp': 1.5,
-                        'default_temp': 0.70
-                    }
-                },
+                'mistral-medium-latest': {},
                 'mistral-small-latest': {},
-                'open-mistral-nemo': {},
-                'codestral-latest': {},
-                'open-codestral-mamba': {
+                'magistral-medium-latest': {
                     'temp_range': {
                         'max_temp': 1.5,
                         'default_temp': 0.70
-                    }
+                    },
+                    'reasoner': True
                 },
-                'ministral-3b-latest': {},
-                'ministral-8b-latest': {}
+                'magistral-small-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.70
+                    },
+                    'reasoner': True
+                },
+                'open-mistral-nemo': {},
+                'ministral-8b-latest': {},
+                'codestral-latest': {},
+                'devstral-medium-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.00
+                    },
+                },
+                'devstral-small-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.00
+                    },
+                },
             }
         },
         'FQWQ': {
