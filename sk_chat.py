@@ -51,9 +51,10 @@ The function system structure: (arguments omitted)
   - ast_nostream()
     - tag_style_reasoning_nostream()
   - ast_stream()
-    - delta_process()
-      - tag_style_reasoning_stream()
-      - tool_process()
+    - data_process()
+      - delta_process()
+        - tag_style_reasoning_stream()
+        - tool_process()
     - tool_append()
   - glm_search()
   - benchmark()
@@ -616,15 +617,9 @@ def ast_stream() -> None:
                     break
                 data = json.loads(data)
                 last = data
-                if error_detail := data.get('error'):
-                    print()
-                    exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
-                if not (choices := data.get('choices')) or \
-                   not (delta_lt := choices[0].get('delta')):
+                return_code = data_process(data)
+                if return_code:
                     continue
-                delta_process(delta_lt)
-                if data.get('web_search'):
-                    glm_search(data.get('web_search'))
         if len(conf.get('tool')) != 1:
             conf['tool_lt'].append(conf.get('tool'))
             tool_append(conf.get('tool_lt'))
@@ -650,6 +645,18 @@ def ast_stream() -> None:
             ))
         except KeyError:
             exitc(f'ERR: {json.loads(rsp.text)}')
+
+def data_process(data:dict) -> int:
+    if error_detail := data.get('error'):
+        print()
+        exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
+    if not (choices := data.get('choices')) or \
+       not (delta_lt := choices[0].get('delta')):
+        return 1
+    delta_process(delta_lt)
+    if data.get('web_search'):
+        glm_search(data.get('web_search'))
+    return 0
 
 def delta_process(delta_lt:str) -> None:
     if not conf['first_token'] and \
