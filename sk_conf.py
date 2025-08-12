@@ -40,6 +40,7 @@ checklt_ori = {
             "version": ("latest", False),
             "free_only": (False, False),
             "search": (True, False),
+            "enable_thinking": (True, False)
         }, False),
         "SIF": ({
             "KEY": ("", True),
@@ -222,50 +223,99 @@ def service_infoget(service:str) -> dict:
         'GLM': {
             'full_name': 'ChatGLM',
             'cht_url': 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-            'max_tokens': 4095,
             'temp_range': {
                 'max_temp': 1,
-                'default_temp': 0.95
+                'default_temp': 0.75
             },
+            'tools': glm_tools,
             'models': {
+                'glm-4.5': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-air': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-x': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-airx': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True
+                },
+                'glm-4.5-flash': {
+                    'temp_range': {
+                        'max_temp': 1,
+                        'default_temp': 0.60
+                    },
+                    'max_tokens': 98304,
+                    'reasoner': True,
+                    'free': True,
+                },
                 'glm-4-plus': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-air-250414': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-airx': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-4-flash-250414': {
-                    'tools': glm_tools,
+                    'max_tokens': 4095,
                     'free': True
                 },
-                'glm-4-flashx': {
-                    'tools': glm_tools
+                'glm-4-flashx-250414': {
+                    'max_tokens': 4095
                 },
                 'glm-4-long': {
-                    'tools': glm_tools
+                    'max_tokens': 4095
                 },
                 'glm-z1-air': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True
                 },
                 'glm-z1-airx': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True
                 },
                 'glm-z1-flash': {
-                    'max_tokens': 30000,
+                    'max_tokens': 32768,
+                    'tools': None,
                     'reasoner': True,
                     'free': True
                 },
+                'glm-z1-flashx': {
+                    'max_tokens': 32768,
+                    'tools': None,
+                    'reasoner': True
+                },
                 'codegeex-4': {
+                    'tools': None,
                     'max_tokens': 32768
                 },
-                'charglm-4': {},
-                'emohaa': {
-                    'max_tokens': 8192
+                'charglm-4': {
+                    'tools': None
                 }
             }
         },
@@ -277,13 +327,16 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 1,
                 'default_temp': 0.30
             },
+            'tools': kimi_tools,
             'models': {
-                'moonshot-v1-auto': {
-                    'tools': kimi_tools
+                'kimi-latest': {},
+                'kimi-k2-turbo-preview': {},
+                'kimi-k2-0711-preview': {},
+                'kimi-thinking-preview': {
+                    'max_tokens': 8192,
+                    'reasoner': True
                 },
-                'kimi-latest': {
-                    'tools': kimi_tools
-                }
+                'moonshot-v1-auto': {}
             }
         },
         'QWEN': {
@@ -291,13 +344,14 @@ def service_infoget(service:str) -> dict:
             'cht_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
             'temp_range': {
                 'max_temp': 2,
-                'default_temp': 0.70,
+                'default_temp': 0.60,
                 'no_max': True
             },
             'models': {
                 'qwen-max': {},
                 'qwen-plus': {},
                 'qwen-turbo': {},
+                'qwen-flash': {},
                 'qwen-long': {
                     'temp_range': {
                         'max_temp': 2,
@@ -306,6 +360,11 @@ def service_infoget(service:str) -> dict:
                     }
                 },
                 'qwen2.5-1.5b-instruct': {
+                    'free': True
+                },
+                'qwen3-coder-plus': {},
+                'qwen3-coder-flash': {},
+                'qwen2.5-coder-3b-instruct': {
                     'free': True
                 },
                 'qwen-math-plus': {
@@ -328,11 +387,6 @@ def service_infoget(service:str) -> dict:
                         'default_temp': 0.00,
                         'no_max': True
                     },
-                    'free': True
-                },
-                'qwen-coder-plus': {},
-                'qwen-coder-turbo': {},
-                'qwen2.5-coder-3b-instruct': {
                     'free': True
                 },
                 'qwq-plus': {
@@ -359,68 +413,82 @@ def service_infoget(service:str) -> dict:
                     'max_tokens': 16384,
                     'reasoner': True,
                     'free': True
-                }
+                },
+                'Moonshot-Kimi-K2-Instruct': {},
+                'glm-4.5': {},
+                'glm-4.5-air': {}
             }
         },
         'SIF': {
             'full_name': 'SiliconFlow',
             'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
             'chk_url': 'https://api.siliconflow.cn/v1/user/info',
-            'max_tokens': 4096,
             'temp_range': {
                 'max_temp': 2,
                 'default_temp': 0.70
             },
+            'reasoner': True,
             'models': {
-                'deepseek-ai/DeepSeek-R1': {
-                    'max_tokens': 8192,
-                    'reasoner': True
+                'deepseek-ai/DeepSeek-R1': {},
+                'deepseek-ai/DeepSeek-V3': {
+                    'reasoner': None
                 },
-                'deepseek-ai/DeepSeek-V3': {},
-                'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B': {
-                    'max_tokens': 16384,
-                    'reasoner': True,
+                'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B': {
                     'free': True
                 },
-                'Qwen/Qwen2.5-72B-Instruct-128K': {},
-                'Qwen/Qwen2.5-7B-Instruct': {
+                'Qwen/Qwen3-235B-A22B-Thinking-2507': {},
+                'Qwen/Qwen3-235B-A22B-Instruct-2507': {
+                    'reasoner': None
+                },
+                'Qwen/Qwen3-30B-A3B-Thinking-2507': {},
+                'Qwen/Qwen3-30B-A3B-Instruct-2507': {
+                    'reasoner': None
+                },
+                'Qwen/Qwen3-32B': {},
+                'Qwen/Qwen3-8B': {
                     'free': True
                 },
-                'Qwen/Qwen2.5-Coder-32B-Instruct': {},
-                'Qwen/Qwen2.5-Coder-7B-Instruct': {
-                    'free': True
+                'Qwen/Qwen3-Coder-480B-A35B-Instruct': {
+                    'reasoner': None
                 },
-                'Qwen/QwQ-32B': {
-                    'reasoner': True
+                'Qwen/Qwen3-Coder-30B-A3B-Instruct': {
+                    'reasoner': None
                 },
-                'Qwen/QwQ-32B-Preview': {
-                    'max_tokens': 8192
+                'Qwen/QwQ-32B': {},
+                'Tongyi-Zhiwen/QwenLong-L1-32B': {},
+                'tencent/Hunyuan-A13B-Instruct': {},
+                'baidu/ERNIE-4.5-300B-A47B': {
+                    'reasoner': None
                 },
+                'zai-org/GLM-4.5': {},
+                'zai-org/GLM-4.5-Air': {},
                 'THUDM/GLM-4-32B-0414': {
-                    'max_tokens': 8192
+                    'reasoner': None
                 },
                 'THUDM/GLM-4-9B-0414': {
-                    'max_tokens': 8192,
+                    'reasoner': None,
                     'free': True
                 },
-                'THUDM/GLM-Z1-32B-0414': {
-                    'reasoner': True
-                },
+                'THUDM/GLM-Z1-32B-0414': {},
                 'THUDM/GLM-Z1-9B-0414': {
-                    'reasoner': True,
                     'free': True
                 },
-                'THUDM/GLM-Z1-Rumination-32B-0414': {
-                    'reasoner': True
-                },
+                'THUDM/GLM-Z1-Rumination-32B-0414': {},
                 'THUDM/glm-4-9b-chat': {
+                    'reasoner': None,
                     'free': True
                 },
-                'internlm/internlm2_5-20b-chat': {},
+                'moonshotai/Kimi-K2-Instruct': {
+                    'reasoner': None
+                },
+                'moonshotai/Kimi-Dev-72B': {},
+                'ascend-tribe/pangu-pro-moe': {},
+                'MiniMaxAI/MiniMax-M1-80k': {},
+                'stepfun-ai/step3': {},
                 'internlm/internlm2_5-7b-chat': {
+                    'reasoner': None,
                     'free': True
-                },
-                'TeleAI/TeleChat2': {}
+                }
             }
         },
         'LEC': {
@@ -431,23 +499,37 @@ def service_infoget(service:str) -> dict:
                 'default_temp': 0.30
             },
             'models': {
-                'mistral-large-latest': {
-                    'temp_range': {
-                        'max_temp': 1.5,
-                        'default_temp': 0.70
-                    }
-                },
+                'mistral-medium-latest': {},
                 'mistral-small-latest': {},
-                'open-mistral-nemo': {},
-                'codestral-latest': {},
-                'open-codestral-mamba': {
+                'magistral-medium-latest': {
                     'temp_range': {
                         'max_temp': 1.5,
                         'default_temp': 0.70
-                    }
+                    },
+                    'reasoner': True
                 },
-                'ministral-3b-latest': {},
-                'ministral-8b-latest': {}
+                'magistral-small-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.70
+                    },
+                    'reasoner': True
+                },
+                'open-mistral-nemo': {},
+                'ministral-8b-latest': {},
+                'codestral-latest': {},
+                'devstral-medium-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.00
+                    },
+                },
+                'devstral-small-latest': {
+                    'temp_range': {
+                        'max_temp': 1.5,
+                        'default_temp': 0.00
+                    },
+                },
             }
         },
         'FQWQ': {
@@ -460,6 +542,12 @@ def service_infoget(service:str) -> dict:
                     'free': True
                 },
                 'deepseek-v3': {},
+                'Qwen3-32B': {
+                    'free': True
+                },
+                'free:Qwen3-30B-A3B': {
+                    'free': True
+                },
                 'QwQ-32B': {
                     'free': True
                 },
@@ -476,33 +564,19 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 1,
                 'default_temp': 0.80
             },
-            'max_tokens': 12288,
+            'max_tokens': 32768,
+            'reasoner': True,
             'models': {
-                'doubao-1.5-pro-32k-250115': {},
-                'doubao-1.5-pro-256k-250115': {},
-                'doubao-1.5-lite-32k-250115': {},
-                'doubao-1-5-thinking-pro-250415': {
-                    'reasoner': True,
-                    'max_tokens': 16384
-                },
-                'deepseek-r1-250120': {
-                    'reasoner': True,
-                    'max_tokens': 16384
-                },
+                'doubao-seed-1-6-250615': {},
+                'doubao-seed-1-6-flash-250715': {},
+                'doubao-seed-1-6-thinking-250715': {},
+                'deepseek-r1-250528': {},
                 'deepseek-v3-250324': {
+                    'reasoner': None,
                     'max_tokens': 16384
                 },
-                'moonshot-v1-8k': {
-                    'max_tokens': 4096
-                },
-                'moonshot-v1-32k': {
-                    'max_tokens': 4096
-                },
-                'moonshot-v1-128k': {
-                    'max_tokens': 4096
-                },
-                'mistral-7b-instruct-v0.2': {
-                    'max_tokens': 4096
+                'kimi-k2-250711': {
+                    'reasoner': None
                 }
             }
         }

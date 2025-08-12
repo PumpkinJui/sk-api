@@ -44,7 +44,6 @@ The function system structure: (arguments omitted)
   - temp_get()
   - system_get()
   - usr_get()
-  - emohaa_meta_get()
 - Balance checker
   balance_chk()
 - Chat executive
@@ -52,9 +51,10 @@ The function system structure: (arguments omitted)
   - ast_nostream()
     - tag_style_reasoning_nostream()
   - ast_stream()
-    - delta_process()
-      - tag_style_reasoning_stream()
-      - tool_process()
+    - data_process()
+      - delta_process()
+        - tag_style_reasoning_stream()
+        - tool_process()
     - tool_append()
   - glm_search()
   - benchmark()
@@ -127,10 +127,13 @@ def conf_read() -> dict:
     conf_r.update(model_info)
     conf_r.update(conf_r.get('temp_range',{}))
     if conf_r.get('tools') and conf_r.get('search') and conf_r.get('full_name') == 'ChatGLM':
-        conf_r['tools'][0]['web_search']['search_prompt'] += \
-            str(now_utc().strftime("%Y-%m-%d UTC"))
-        conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
-        conf_r['tools'][0]['web_search']['search_result'] = conf_r.pop('search_result')
+        if conf_r.get('free_only'):
+            conf_r['search'] = False
+        else:
+            conf_r['tools'][0]['web_search']['search_prompt'] += \
+                str(now_utc().strftime("%Y-%m-%d UTC"))
+            conf_r['tools'][0]['web_search']['search_engine'] = conf_r.pop('search_engine')
+            conf_r['tools'][0]['web_search']['search_result'] = conf_r.pop('search_result')
     __ = [conf_r.pop(i,None) for i in ('models','temp_range','search_engine','search_result')]
     conf_r = model_remap(conf_r)
     nested = [m for m, n in conf_r.items() if isinstance(n, dict)]
@@ -169,8 +172,8 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
                         lst[i][keyword] = i
                         return lst[i]
                 for i in lt:
-                    if chn in i:
-                        print(f'INF: Selection guessed: {chn}. Accepted.')
+                    if chn.lower() in i.lower():
+                        print(f'INF: Selection guessed: {i}. Accepted.')
                         lst[i][keyword] = i
                         return lst[i]
             print('ERR: Selection invalid.')
@@ -254,15 +257,18 @@ def model_remap(remap_conf:dict) -> dict:
         dict: The model-remapped conf.
     """
     if remap_conf.get('full_name') == 'ModelStudio':
+        if remap_conf.get('model') in {
+            'qwen-plus', 'qwen-turbo', 'qwen-flash',
+            'glm-4.5', 'glm-4.5-air'
+        }:
+            remap_conf['reasoner'] = remap_conf.get('enable_thinking')
+            remap_conf['r_nr'] = True
         remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
-        del remap_conf['version']
+        __ = [remap_conf.pop(i,None) for i in ('version','enable_thinking')]
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
        not remap_conf.get('free_only'):
-        model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
-        remap_conf['model'] = model
-        if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
-            remap_conf['max_tokens'] = 16384
+        remap_conf['model'] = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         del remap_conf['pro']
         return remap_conf
     return remap_conf
@@ -299,8 +305,8 @@ def qwen_remap(model:str,ver:str) -> str:
     if model not in {
         'qwen-max','qwen-plus','qwen-turbo',
         'qwen-math-plus','qwen-math-turbo',
-        'qwen-coder-plus','qwen-coder-turbo',
-        'qwq-plus'
+        'qwen3-coder-plus','qwen3-coder-flash',
+        'qwq-plus','qwen-long'
     } or ver == 'stable':
         return model
     if ver not in {'stable','latest','oss'}:
@@ -312,13 +318,13 @@ def qwen_remap(model:str,ver:str) -> str:
         print(f'INF: Remap to {model}.')
         return model
     oss_map = {
-        'qwen-max': 'qwen2.5-72b-instruct',
-        'qwen-plus': 'qwen2.5-32b-instruct',
-        'qwen-turbo': 'qwen2.5-14b-instruct-1m',
+        'qwen-max': 'qwen-max-latest',
+        'qwen-plus': 'qwen3-235b-a22b',
+        'qwen-turbo': 'qwen3-30b-a3b',
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
-        'qwen-coder-plus': 'qwen2.5-coder-32b-instruct',
-        'qwen-coder-turbo': 'qwen2.5-coder-7b-instruct',
+        'qwen3-coder-plus': 'qwen3-coder-480b-a35b-instruct',
+        'qwen3-coder-flash': 'qwen3-coder-30b-a3b-instruct',
         'qwq-plus': 'qwq-32b'
     }
     model = oss_map.get(model)
@@ -348,9 +354,8 @@ def sif_remap(model:str,pro:bool) -> str:
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
-        'Qwen/Qwen2.5-7B-Instruct',
-        'Qwen/Qwen2.5-Coder-7B-Instruct',
-        'THUDM/glm-4-9b-chat'
+        'THUDM/glm-4-9b-chat',
+        'moonshotai/Kimi-K2-Instruct'
     } or not pro:
         return model
     model = 'Pro/' + model
@@ -394,14 +399,16 @@ def payload_gen() -> str:
         payload['stream_options'] = {
             'include_usage': True
         }
+    if conf.get('r_nr'):
+        payload['enable_thinking'] = conf.get('reasoner')
     if conf.get('search') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
-    elif conf.get('model') == 'emohaa':
-        payload['meta'] = conf.get('meta')
     elif conf.get('search') and conf.get('model') in {
         'qwen-max','qwen-max-latest',
         'qwen-plus','qwen-plus-latest',
-        'qwen-turbo','qwen-turbo-latest'
+        'qwen-turbo','qwen-turbo-latest',
+        'qwq-plus','qwq-plus-latest','qwq-32b',
+        'Moonshot-Kimi-K2-Instruct'
     }:
         payload['enable_search'] = True
     payload_json = json.dumps(payload)
@@ -518,40 +525,6 @@ def usr_get() -> dict:
     usr = lines_get() or exitc('INF: Null input, chat ended.')
     return {'role': 'user', 'content': usr}
 
-def emohaa_meta_get() -> dict:
-    """Get META from user. Emohaa-dedicated.
-
-    1. Get `user_name` in single line mode.
-    2. Get `user_info` in multiline mode.
-    3. Generate `bot_info`.
-    4. Generate `meta`.
-
-    Args: None.
-    Returns:
-        dict: the emohaa meta.
-    Input requested.
-    """
-    user_name = input('USER NAME\n')
-    if not user_name:
-        user_name = '用户'
-    print()
-    print('USER INFO')
-    user_info = lines_get() or '用户对心理学不太了解。'
-    bot_info = '，'.join([
-        'Emohaa 学习了经典的 Hill 助人理论',
-        '拥有人类心理咨询师的专业话术能力',
-        '具有较强的倾听、情感映射、共情等情绪支持能力',
-        '帮助用户了解自身想法和感受，学习应对情绪问题',
-        '帮助用户实现乐观、积极的心理和情感状态。'
-    ])
-    meta= {
-        "user_name": user_name,
-        "user_info": user_info,
-        "bot_name": "Emohaa",
-        "bot_info": bot_info
-    }
-    return meta
-
 def ast_nostream() -> None:
     req_begin = now_utc().timestamp()
     rsp = requests.request(
@@ -597,11 +570,14 @@ def ast_nostream() -> None:
                     json.loads(rsp.text).get('usage').get('prompt_tokens')
                 )
     else:
-        # pylint: disable-next=consider-using-f-string
-        exitc('ERR: {} {}'.format(
-            rsp.status_code,
-            json.loads(rsp.text)['error']['message']
-        ))
+        try:
+            # pylint: disable-next=consider-using-f-string
+            exitc('ERR: {} {}'.format(
+                rsp.status_code,
+                json.loads(rsp.text)['error']['message']
+            ))
+        except KeyError:
+            exitc(f'ERR: {json.loads(rsp.text)}')
 
 def tag_style_reasoning_nostream(con:str) -> str:
     con = con.replace('<think>','',1)
@@ -641,15 +617,9 @@ def ast_stream() -> None:
                     break
                 data = json.loads(data)
                 last = data
-                if error_detail := data.get('error'):
-                    print()
-                    exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
-                if not (choices := data.get('choices')) or \
-                   not (delta_lt := choices[0].get('delta')):
+                return_code = data_process(data)
+                if return_code:
                     continue
-                delta_process(delta_lt)
-                if data.get('web_search'):
-                    glm_search(data.get('web_search'))
         if len(conf.get('tool')) != 1:
             conf['tool_lt'].append(conf.get('tool'))
             tool_append(conf.get('tool_lt'))
@@ -667,11 +637,26 @@ def ast_stream() -> None:
                     last.get('usage').get('prompt_tokens')
                 )
     else:
-        # pylint: disable-next=consider-using-f-string
-        exitc('ERR: {} {}'.format(
-            rsp.status_code,
-            json.loads(rsp.text)['error']['message']
-        ))
+        try:
+            # pylint: disable-next=consider-using-f-string
+            exitc('ERR: {} {}'.format(
+                rsp.status_code,
+                json.loads(rsp.text)['error']['message']
+            ))
+        except KeyError:
+            exitc(f'ERR: {json.loads(rsp.text)}')
+
+def data_process(data:dict) -> int:
+    if error_detail := data.get('error'):
+        print()
+        exitc(f'ERR: {error_detail.get("message")} ({error_detail.get("code")})')
+    if not (choices := data.get('choices')) or \
+       not (delta_lt := choices[0].get('delta')):
+        return 1
+    delta_process(delta_lt)
+    if data.get('web_search'):
+        glm_search(data.get('web_search'))
+    return 0
 
 def delta_process(delta_lt:str) -> None:
     if not conf['first_token'] and \
@@ -680,6 +665,17 @@ def delta_process(delta_lt:str) -> None:
         conf['first_token'] = now_utc().timestamp()
     if (delta := delta_lt.get('content')) or \
        (delta == '' and not delta_lt.get('reasoning_content')):
+        if isinstance(delta,list):
+            conf['dlist'] = True
+            #print(delta)
+            try:
+                delta = delta[0]['thinking'][0]['text']
+            except IndexError:
+                delta = ''
+        elif conf.get('dlist'):
+            conf['dlist'] = False
+            conf['gocon'] = False
+            conf['ast'] = ''
         if not conf.get('ast'):
             delta = delta.lstrip()
             if not conf.get('gocon') and \
@@ -872,8 +868,6 @@ def chat() -> None:
         conf['temp'] = temp_get()
     if conf.get('show_system') and not conf.get('reasoner'):
         conf['msg'].append(system_get())
-    if conf.get('model') == 'emohaa':
-        conf['meta'] = emohaa_meta_get()
     while True:
         conf['rnd'] += 1
         conf['msg'].append(usr_get())
@@ -893,7 +887,7 @@ try:
     if conf.get('balance_chk') and conf.get('chk_url'):
         print(balance_chk())
         print()
-    # print(payload_gen([],0,False))
+    # print(payload_gen())
     # exitc('INF: Debug Exit.')
     chat()
 except KeyboardInterrupt:
