@@ -564,33 +564,19 @@ def service_infoget(service:str) -> dict:
                 'max_temp': 1,
                 'default_temp': 0.80
             },
-            'max_tokens': 12288,
+            'max_tokens': 32768,
+            'reasoner': True,
             'models': {
-                'doubao-1.5-pro-32k-250115': {},
-                'doubao-1.5-pro-256k-250115': {},
-                'doubao-1.5-lite-32k-250115': {},
-                'doubao-1-5-thinking-pro-250415': {
-                    'reasoner': True,
-                    'max_tokens': 16384
-                },
-                'deepseek-r1-250528': {
-                    'reasoner': True,
-                    'max_tokens': 16384
-                },
+                'doubao-seed-1-6-250615': {},
+                'doubao-seed-1-6-flash-250715': {},
+                'doubao-seed-1-6-thinking-250715': {},
+                'deepseek-r1-250528': {},
                 'deepseek-v3-250324': {
+                    'reasoner': None,
                     'max_tokens': 16384
                 },
-                'moonshot-v1-8k': {
-                    'max_tokens': 4096
-                },
-                'moonshot-v1-32k': {
-                    'max_tokens': 4096
-                },
-                'moonshot-v1-128k': {
-                    'max_tokens': 4096
-                },
-                'mistral-7b-instruct-v0.2': {
-                    'max_tokens': 4096
+                'kimi-k2-250711': {
+                    'reasoner': None
                 }
             }
         }
