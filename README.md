@@ -10,6 +10,8 @@
 [![Commit Activity: How many commits are there in total.](https://img.shields.io/github/commit-activity/t/PumpkinJui/sk-api?style=for-the-badge&color=yellow)](https://github.com/PumpkinJui/sk-api/commits/main/)
 ![Last Commit: When was the last commit made.](https://img.shields.io/github/last-commit/PumpkinJui/sk-api?display_timestamp=author&style=for-the-badge&color=yellow)
 
+> 文档版本：1.6.2
+
 通过调用大模型 API，在 Python 或 CLI 中进行 AI 对话补全。
 
 嫌 CLI 界面太丑，MarkDown & LaTeX 公式不渲染？试试 [CherryStudio](https://cherry-ai.com/)！  
