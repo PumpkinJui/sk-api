@@ -423,75 +423,70 @@ def service_infoget(service:str) -> dict:
             'full_name': 'SiliconFlow',
             'cht_url': 'https://api.siliconflow.cn/v1/chat/completions',
             'chk_url': 'https://api.siliconflow.cn/v1/user/info',
-            'max_tokens': 4096,
             'temp_range': {
                 'max_temp': 2,
                 'default_temp': 0.70
             },
+            'reasoner': True,
             'models': {
-                'deepseek-ai/DeepSeek-R1': {
-                    'max_tokens': 8192,
-                    'reasoner': True
+                'deepseek-ai/DeepSeek-R1': {},
+                'deepseek-ai/DeepSeek-V3': {
+                    'reasoner': None
                 },
-                'deepseek-ai/DeepSeek-V3': {},
-                'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B': {
-                    'max_tokens': 16384,
-                    'reasoner': True,
+                'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B': {
                     'free': True
                 },
-                'MiniMaxAI/MiniMax-M1-80k': {
-                    'max_tokens': 40000,
-                    'reasoner': True
+                'Qwen/Qwen3-235B-A22B-Thinking-2507': {},
+                'Qwen/Qwen3-235B-A22B-Instruct-2507': {
+                    'reasoner': None
                 },
-                'Tongyi-Zhiwen/QwenLong-L1-32B': {
-                    'max_tokens': 8192,
-                    'reasoner': True
+                'Qwen/Qwen3-30B-A3B-Thinking-2507': {},
+                'Qwen/Qwen3-30B-A3B-Instruct-2507': {
+                    'reasoner': None
                 },
-                'Qwen/Qwen3-235B-A22B': {
-                    'max_tokens': 8192,
-                    'reasoner': True
-                },
-                'Qwen/Qwen3-30B-A3B': {
-                    'max_tokens': 8192,
-                    'reasoner': True
-                },
-                'Qwen/Qwen3-32B': {
-                    'max_tokens': 8192,
-                    'reasoner': True
-                },
+                'Qwen/Qwen3-32B': {},
                 'Qwen/Qwen3-8B': {
-                    'max_tokens': 8192,
-                    'reasoner': True,
                     'free': True
                 },
-                'Qwen/QwQ-32B': {
-                    'max_tokens': None,
-                    'reasoner': True
+                'Qwen/Qwen3-Coder-480B-A35B-Instruct': {
+                    'reasoner': None
                 },
-                'Qwen/QwQ-32B-Preview': {
-                    'max_tokens': 8192
+                'Qwen/Qwen3-Coder-30B-A3B-Instruct': {
+                    'reasoner': None
                 },
+                'Qwen/QwQ-32B': {},
+                'Tongyi-Zhiwen/QwenLong-L1-32B': {},
+                'tencent/Hunyuan-A13B-Instruct': {},
+                'baidu/ERNIE-4.5-300B-A47B': {
+                    'reasoner': None
+                },
+                'zai-org/GLM-4.5': {},
+                'zai-org/GLM-4.5-Air': {},
                 'THUDM/GLM-4-32B-0414': {
-                    'max_tokens': 8192
+                    'reasoner': None
                 },
                 'THUDM/GLM-4-9B-0414': {
-                    'max_tokens': 8192,
+                    'reasoner': None,
                     'free': True
                 },
-                'THUDM/GLM-Z1-32B-0414': {
-                    'reasoner': True
-                },
+                'THUDM/GLM-Z1-32B-0414': {},
                 'THUDM/GLM-Z1-9B-0414': {
-                    'reasoner': True,
                     'free': True
                 },
-                'THUDM/GLM-Z1-Rumination-32B-0414': {
-                    'reasoner': True
-                },
+                'THUDM/GLM-Z1-Rumination-32B-0414': {},
                 'THUDM/glm-4-9b-chat': {
+                    'reasoner': None,
                     'free': True
                 },
+                'moonshotai/Kimi-K2-Instruct': {
+                    'reasoner': None
+                },
+                'moonshotai/Kimi-Dev-72B': {},
+                'ascend-tribe/pangu-pro-moe': {},
+                'MiniMaxAI/MiniMax-M1-80k': {},
+                'stepfun-ai/step3': {},
                 'internlm/internlm2_5-7b-chat': {
+                    'reasoner': None,
                     'free': True
                 }
             }

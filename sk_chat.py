@@ -171,7 +171,7 @@ def service_model(keyword:str,lst:dict,sts:str='prompt',free:bool=False) -> str:
                         lst[i][keyword] = i
                         return lst[i]
                 for i in lt:
-                    if chn in i:
+                    if chn.lower() in i.lower():
                         print(f'INF: Selection guessed: {i}. Accepted.')
                         lst[i][keyword] = i
                         return lst[i]
@@ -267,10 +267,7 @@ def model_remap(remap_conf:dict) -> dict:
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
        not remap_conf.get('free_only'):
-        model = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
-        remap_conf['model'] = model
-        if model in {'Pro/deepseek-ai/DeepSeek-R1'}:
-            remap_conf['max_tokens'] = 16384
+        remap_conf['model'] = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
         del remap_conf['pro']
         return remap_conf
     return remap_conf
@@ -356,9 +353,8 @@ def sif_remap(model:str,pro:bool) -> str:
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
-        'Qwen/Qwen2.5-7B-Instruct',
-        'Qwen/Qwen2.5-Coder-7B-Instruct',
-        'THUDM/glm-4-9b-chat'
+        'THUDM/glm-4-9b-chat',
+        'moonshotai/Kimi-K2-Instruct'
     } or not pro:
         return model
     model = 'Pro/' + model
