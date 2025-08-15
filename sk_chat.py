@@ -319,13 +319,14 @@ def qwen_remap(model:str,ver:str) -> str:
         return model
     oss_map = {
         'qwen-max': 'qwen-max-latest',
-        'qwen-plus': 'qwen3-235b-a22b',
-        'qwen-turbo': 'qwen3-30b-a3b',
+        'qwen-plus': 'qwen3-235b-a22b-thinking-2507',
+        'qwen-turbo': 'qwen3-30b-a3b-thinking-2507',
         'qwen-math-plus': 'qwen2.5-math-72b-instruct',
         'qwen-math-turbo': 'qwen2.5-math-7b-instruct',
         'qwen3-coder-plus': 'qwen3-coder-480b-a35b-instruct',
         'qwen3-coder-flash': 'qwen3-coder-30b-a3b-instruct',
-        'qwq-plus': 'qwq-32b'
+        'qwq-plus': 'qwq-32b',
+        'qwen-long': 'qwen-long-latest'
     }
     model = oss_map.get(model)
     print(f'INF: Remap to {model}.')
