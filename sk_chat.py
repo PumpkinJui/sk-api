@@ -259,7 +259,7 @@ def model_remap(remap_conf:dict) -> dict:
     if remap_conf.get('full_name') == 'ModelStudio':
         if remap_conf.get('model') in {
             'qwen-plus', 'qwen-turbo', 'qwen-flash',
-            'glm-4.5', 'glm-4.5-air'
+            'glm-4.5', 'glm-4.5-air', 'deepseek-v3.1'
         }:
             remap_conf['reasoner'] = remap_conf.get('enable_thinking')
             remap_conf['r_nr'] = True
@@ -352,6 +352,7 @@ def sif_remap(model:str,pro:bool) -> str:
         str: the remapped model.
     """
     if model not in {
+        'deepseek-ai/DeepSeek-V3.1',
         'deepseek-ai/DeepSeek-R1',
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
@@ -753,7 +754,7 @@ def tool_append(tool_lt:list) -> None:
         tool_ast = {
             'index': m,
             'id': n.get('tool_call_id'),
-            'type': 'builtin_function', 
+            'type': 'builtin_function',
             'function': {
                 'name': n.get('name'),
                 'arguments': n.get('content')

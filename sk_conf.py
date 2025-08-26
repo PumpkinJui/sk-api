@@ -393,6 +393,14 @@ def service_infoget(service:str) -> dict:
                     'reasoner': True
                 },
                 'qwq-32b-preview': {},
+                'deepseek-v3.1': {
+                    'max_tokens': 65536,
+                    'reasoner': True,
+                    'temp_range': {
+                        'max_temp': 2,
+                        'default_temp': 0.60
+                    }
+                },
                 'deepseek-v3': {
                     'max_tokens': 8192,
                     'temp_range': {
@@ -401,7 +409,7 @@ def service_infoget(service:str) -> dict:
                     }
                 },
                 'deepseek-r1': {
-                    'max_tokens': 8192,
+                    'max_tokens': 16384,
                     'reasoner': True
                 },
                 'deepseek-r1-distill-llama-70b': {
@@ -429,6 +437,7 @@ def service_infoget(service:str) -> dict:
             },
             'reasoner': True,
             'models': {
+                'deepseek-ai/DeepSeek-V3.1': {},
                 'deepseek-ai/DeepSeek-R1': {},
                 'deepseek-ai/DeepSeek-V3': {
                     'reasoner': None
@@ -570,6 +579,7 @@ def service_infoget(service:str) -> dict:
                 'doubao-seed-1-6-250615': {},
                 'doubao-seed-1-6-flash-250715': {},
                 'doubao-seed-1-6-thinking-250715': {},
+                'deepseek-v3-1-250821': {},
                 'deepseek-r1-250528': {},
                 'deepseek-v3-250324': {
                     'reasoner': None,
