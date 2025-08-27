@@ -5,6 +5,7 @@ from types import MappingProxyType as mpt
 checklt_ori = {
     "stream": (True, False),
     "autotime": (True, False),
+    "enable_thinking": (True, False),
     "prompt_control": ({
         "balance_chk": (True, False),
         "long_prompt": (False, False),
@@ -39,8 +40,7 @@ checklt_ori = {
             "model": ("prompt", False),
             "version": ("latest", False),
             "free_only": (False, False),
-            "search": (True, False),
-            "enable_thinking": (True, False)
+            "search": (True, False)
         }, False),
         "SIF": ({
             "KEY": ("", True),

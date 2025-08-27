@@ -263,7 +263,11 @@ def model_remap(remap_conf:dict) -> dict:
         }:
             remap_conf['reasoner'] = remap_conf.get('enable_thinking')
             remap_conf['r_nr'] = True
-        remap_conf['model'] = qwen_remap(remap_conf.get('model'),remap_conf.get('version'))
+        remap_conf['model'] = qwen_remap(
+            remap_conf.get('model'),
+            remap_conf.get('version'),
+            remap_conf.get('reasoner')
+        )
         __ = [remap_conf.pop(i,None) for i in ('version','enable_thinking')]
         return remap_conf
     if remap_conf.get('full_name') == 'SiliconFlow' and \
@@ -273,7 +277,7 @@ def model_remap(remap_conf:dict) -> dict:
         return remap_conf
     return remap_conf
 
-def qwen_remap(model:str,ver:str) -> str:
+def qwen_remap(model:str,ver:str,rs:bool) -> str:
     """QWEN-dedicated model remapper.
 
     Qwen has three types of models, roughly speaking.
@@ -299,6 +303,8 @@ def qwen_remap(model:str,ver:str) -> str:
         - ver: str
           Valid: one of 'stable', 'latest' and 'oss' (Open-Source Software).
           Short for 'VERsion'.
+        - rs: bool
+          Short for 'ReaSoning'.
     Returns:
         str: the remapped model.
     """
@@ -328,7 +334,14 @@ def qwen_remap(model:str,ver:str) -> str:
         'qwq-plus': 'qwq-32b',
         'qwen-long': 'qwen-long-latest'
     }
-    model = oss_map.get(model)
+    oss_map_i = {
+        'qwen-plus': 'qwen3-235b-a22b-instruct-2507',
+        'qwen-turbo': 'qwen3-30b-a3b-instruct-2507'
+    }
+    if model in oss_map and model in oss_map_i and not rs:
+        model = oss_map_i.get(model)
+    else:
+        model = oss_map.get(model)
     print(f'INF: Remap to {model}.')
     return model
 
