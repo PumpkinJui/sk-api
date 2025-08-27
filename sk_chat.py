@@ -256,24 +256,38 @@ def model_remap(remap_conf:dict) -> dict:
     Returns:
         dict: The model-remapped conf.
     """
-    if remap_conf.get('full_name') == 'ModelStudio':
-        if remap_conf.get('model') in {
+    r_models = {
+        'ModelStudio': {
             'qwen-plus', 'qwen-turbo', 'qwen-flash',
             'glm-4.5', 'glm-4.5-air', 'deepseek-v3.1'
-        }:
-            remap_conf['reasoner'] = remap_conf.get('enable_thinking')
-            remap_conf['r_nr'] = True
+        },
+        'SiliconFlow': {
+            'deepseek-ai/DeepSeek-V3.1',
+            'Qwen/Qwen3-32B',
+            'tencent/Hunyuan-A13B-Instruct'
+        },
+        'VolcanoArk': {
+            'doubao-seed-1-6-250615',
+            'doubao-seed-1-6-flash-250615',
+            'deepseek-v3-1-250821'
+        }
+    }
+    if remap_conf.get('model') in r_models.get(remap_conf.get('full_name'),{}):
+        remap_conf['reasoner'] = remap_conf.get('enable_thinking')
+        remap_conf['r_nr'] = True
+    del remap_conf['enable_thinking']
+    if remap_conf.get('full_name') == 'ModelStudio':
         remap_conf['model'] = qwen_remap(
             remap_conf.get('model'),
             remap_conf.get('version'),
             remap_conf.get('reasoner')
         )
-        __ = [remap_conf.pop(i,None) for i in ('version','enable_thinking')]
+        del remap_conf['version']
         return remap_conf
-    if remap_conf.get('full_name') == 'SiliconFlow' and \
-       not remap_conf.get('free_only'):
-        remap_conf['model'] = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
-        del remap_conf['pro']
+    if remap_conf.get('full_name') == 'SiliconFlow':
+        if not remap_conf.get('free_only'):
+            remap_conf['model'] = sif_remap(remap_conf.get('model'),remap_conf.get('pro'))
+            del remap_conf['pro']
         return remap_conf
     return remap_conf
 
@@ -415,7 +429,12 @@ def payload_gen() -> str:
             'include_usage': True
         }
     if conf.get('r_nr'):
-        payload['enable_thinking'] = conf.get('reasoner')
+        if conf.get('full_name') == 'VolcanoArk':
+            payload['thinking'] = {
+                'type': 'enabled' if conf.get('reasoner') else 'disabled'
+            }
+        else:
+            payload['enable_thinking'] = conf.get('reasoner')
     if conf.get('search') and conf.get('tools'):
         payload["tools"] = conf.get('tools')
     elif conf.get('search') and conf.get('model') in {
