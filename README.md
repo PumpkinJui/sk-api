@@ -1,5 +1,7 @@
 # sk-api
 
+**本项目已停止维护，详情请继续阅读。**
+
 ![Create At: 2025-01-09.](https://img.shields.io/github/created-at/PumpkinJui/sk-api?style=for-the-badge&logo=github&logoColor=white&color=477DB2)
 [![License: MIT.](https://img.shields.io/github/license/PumpkinJui/sk-api?style=for-the-badge&color=477DB2)](LICENSE)
 ![Repo Size: Various.](https://img.shields.io/github/repo-size/PumpkinJui/sk-api?style=for-the-badge&logo=python&logoColor=white&color=477DB2)
@@ -17,6 +19,26 @@
 嫌 CLI 界面太丑，MarkDown & LaTeX 公式不渲染？试试 [CherryStudio](https://cherry-ai.com/)！  
 个人推荐，非广告；CherryStudio 与本人无利益关联。  
 另附文章：[新学期，给自己配一个好用的 AI 助手吧。会思考，能联网，有知识库那种 - 少数派](https://sspai.com/post/96868)
+
+## 本项目已停止维护
+
+本项目已停止维护。以下是对本项目的剧终总结。
+
+主要原因是 LLM 更新迭代速度极快，而本项目的模型列表在 `sk_conf` 硬编码，需要经常更新；但这只是一个很小的项目，不愿为此多花时间。一拖再拖，其实八月以后本仓库就没有任何 commit 了。期间虽然 Qwen3-235B-A22B 仍然是该系列最新最强的开源模型，但 DeepSeek 发了 V3.1-Terminus 和 V3.2，智谱发了 GLM-4.6 和 GLM-4.7，Kimi 发了 K2-0905 和 K2.5，等等等等。而抉择到底需要哪些模型、不要哪些模型，又是很麻烦的事情，更何况有些厂商就是不喜欢好好命名。算下来，基本上所有的列表都要重写一遍，索性算了。
+
+其次是本项目固有的局限性：不能输入图片、MarkDown & LaTeX 不能渲染一类，虽然可以忍受，但用久了眼晕。
+
+然而，我仍然认为这对我是一次有益的尝试。这是我迄今做过最大的项目，我学到了很多。如何写出更好的语法、如何维护更大的项目、用同一套架构尽可能兼容各种发扬个性的厂商、和 JSON 嵌套打架、发出 HTTP 请求……只有自己动手，才能学到这些东西。此外，我也认为本项目仍然是一个不错的测试工具。
+
+在这个意义上，我没有「弃坑」。
+
+本项目仍然可以通过一些操作续命。如上文所述，主要问题在于模型列表没有更新。可以直接在源码层面进行更新。`develop` 分支尚有一些未拉取的更改，建议使用该分支。在 `sk_conf` 中写入新的模型信息即可。或者，自 1.6 开始，也可以直接在 `sk.json` 配置文件中强行指定使用的模型。
+
+如果不想使用本项目，也可以在电脑端使用 [Cherry Studio](https://www.cherry-ai.com/)，在 Android 端使用 [RikkaHub](https://rikka-ai.com/)，都是很不错的图形化界面的选择。后者我是从[硅基流动文档](https://docs.siliconflow.cn/cn/usercases/)里面找到的，其实用里面提到的 Chatbox 应该也不错。
+
+大概我本地还会改配置文件，继续给这个项目续命。毕竟，我还是喜欢打开 Termux，输入 `5` 后回车，直接开启一段无痕对话的感觉。很干净。
+
+不过，现在这个项目要 THE END 了。晚安。
 
 ## 功能特性
 
